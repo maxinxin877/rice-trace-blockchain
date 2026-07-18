@@ -1,0 +1,20 @@
+export const riceApi = {
+  fields: '/rice/fields',
+  plantingBatches: '/rice/planting-batches',
+  storageReceipts: '/rice/storage-receipts',
+  millingBatches: '/rice/milling-batches',
+  productBatches: '/rice/product-batches',
+  traceCodes: '/rice/trace-codes',
+  traceCodeGenerate: '/rice/trace-codes/generate',
+  traceCodeActivate: '/rice/trace-codes/activate',
+  channelWarnings: '/rice/channel-warnings',
+  dashboardSummary: '/rice/dashboard/summary',
+  yieldBalanceCheck: '/rice/regulation/yield-balance/check',
+  yieldBalanceResults: '/rice/regulation/yield-balance/results',
+  riskWarnings: '/rice/regulation/risk-warnings',
+  auditLogs: '/rice/regulation/audit-logs',
+  chainProofs: '/rice/chain-proofs',
+  miniLogin: '/mini/rice/auth/login',
+  miniTrace: '/mini/rice/trace',
+  files: '/files'
+}
