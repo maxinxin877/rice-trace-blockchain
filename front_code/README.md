@@ -1,33 +1,5 @@
-# front_code
+# Vue 3 + TypeScript + Vite
 
-Vue3 前端框架占位，按接口文档拆分管理端页面、小程序扫码页面、监管页面和公共能力。
+This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
 
-## 目录结构
-
-```text
-src
-  api          接口路径与请求封装
-  components   公共组件
-  layout       管理端布局
-  router       页面路由
-  styles       全局样式
-  views
-    rice       Web 管理端与监管端页面
-    mini       小程序扫码页面占位
-```
-
-## 前端分工建议
-
-| 人员 | 主责页面 | 必须共同完成 |
-|---|---|---|
-| 前端 A | 地块、种植批次、农事记录、环境数据、入库质检、加工批次、成品批次 | 接口接入、表单校验、loading、空状态、错误提示、页面自测 |
-| 前端 B | 防伪码、窜货预警、小程序扫码、产量校验、风险预警、审计日志、链上核验、看板 | 接口接入、表单校验、loading、空状态、错误提示、页面自测 |
-
-## 启动方式
-
-```bash
-npm install
-npm run dev
-```
-
-当前只提供框架和页面占位，具体业务代码后续补充。
+Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
