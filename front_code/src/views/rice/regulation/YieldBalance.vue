@@ -60,17 +60,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import PageContainer from '@/components/common/PageContainer.vue'
+import { regulationApi } from '@/api/modules/regulation'
+import type { YieldBalanceResult, YieldBalanceScope } from '@/types/regulation'
 
 interface CheckResult {
   businessId: string; fieldName: string; muYield: number; muYieldPass: boolean
   outputRate: number; outputRatePass: boolean; passed: boolean; suggestion: string
 }
-
-// 阈值
-const MU_MIN = 300, MU_MAX = 700
-const RATE_MIN = 55, RATE_MAX = 75
 
 const checking = ref(false)
 const results = ref<CheckResult[]>([])
@@ -81,19 +79,37 @@ const passRate = computed(() => {
   return Math.round(results.value.filter((r) => r.passed).length / results.value.length * 100)
 })
 
-const mockResults: CheckResult[] = [
-  { businessId: 'RPB202607010001', fieldName: '五常一号稻田', muYield: 650, muYieldPass: true, outputRate: 65, outputRatePass: true, passed: true, suggestion: '各项指标均在正常范围内' },
-  { businessId: 'RPB202607010002', fieldName: '五常二号稻田', muYield: 650, muYieldPass: true, outputRate: 60, outputRatePass: true, passed: true, suggestion: '产出率略高于下限，建议关注原粮水分' },
-  { businessId: 'RPB202607010003', fieldName: '长春水稻试验田', muYield: 280, muYieldPass: false, outputRate: 0, outputRatePass: true, passed: false, suggestion: '亩产低于300kg阈值，建议核实收割面积和称重数据' },
-  { businessId: 'RPB202607010004', fieldName: '盘锦蟹田稻基地', muYield: 550, muYieldPass: true, outputRate: 0, outputRatePass: true, passed: true, suggestion: '亩产正常，尚未有加工数据' },
-  { businessId: 'RPB202607010005', fieldName: '齐齐哈尔绿色稻田', muYield: 720, muYieldPass: false, outputRate: 0, outputRatePass: true, passed: false, suggestion: '亩产超过700kg上限，请核实是否存在数据录入错误' },
-]
-
-function runCheck() {
-  checking.value = true
-  setTimeout(() => {
-    results.value = mockResults
-    checking.value = false
-  }, 800)
+function mapResult(record: YieldBalanceResult): CheckResult {
+  const muYield = record.items.find((item) => item.itemName.includes('亩产'))
+  const outputRate = record.items.find((item) => item.itemName.includes('产出率'))
+  const failedItems = record.items.filter((item) => item.result !== 'PASS')
+  return {
+    businessId: record.plantingBatchId || record.productBatchId || record.checkId,
+    fieldName: record.checkId,
+    muYield: muYield?.computedValue || 0,
+    muYieldPass: !muYield || muYield.result === 'PASS',
+    outputRate: outputRate?.computedValue || 0,
+    outputRatePass: !outputRate || outputRate.result === 'PASS',
+    passed: record.result === 'PASS',
+    suggestion: failedItems.length ? `${failedItems.map((item) => item.itemName).join('、')}异常，请核对投入产出数据` : '各项指标均在正常范围内',
+  }
 }
+
+async function loadResults() {
+  const response = await regulationApi.getYieldBalanceResults({ page: 1, pageSize: 20 })
+  results.value = response.data.records.map(mapResult)
+}
+
+async function runCheck() {
+  checking.value = true
+  try {
+    const scopeMap: Record<string, YieldBalanceScope> = { ALL: 'FULL_CHAIN', BATCH: 'PLANTING_TO_STORAGE', FIELD: 'PLANTING_TO_STORAGE' }
+    await regulationApi.checkYieldBalance({ checkScope: scopeMap[form.scope] || 'FULL_CHAIN', plantingBatchId: form.batchId || undefined })
+    await loadResults()
+  } finally {
+    checking.value = false
+  }
+}
+
+onMounted(loadResults)
 </script>

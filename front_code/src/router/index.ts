@@ -9,6 +9,7 @@ declare module 'vue-router' {
     title?: string
     icon?: string
     hidden?: boolean
+    public?: boolean
     /** 哪些角色可以看到此菜单项（不设置则所有角色可见） */
     roles?: UserRole[]
   }
@@ -99,6 +100,12 @@ const riceRoutes: RouteRecordRaw[] = [
     meta: { title: '防伪码管理', icon: 'Ticket', roles: ['RICE_ADMIN', 'BRAND', 'REGULATOR'] },
   },
   {
+    path: '/rice/channel-warnings',
+    name: 'ChannelWarnings',
+    component: () => import('@/views/rice/trace/ChannelWarnings.vue'),
+    meta: { title: '窜货预警', icon: 'LocationInformation', roles: ['RICE_ADMIN', 'BRAND', 'REGULATOR'] },
+  },
+  {
     path: '/rice/regulation/risk-warnings',
     name: 'RiskWarningList',
     component: () => import('@/views/rice/regulation/RiskWarningList.vue'),
@@ -115,6 +122,12 @@ const riceRoutes: RouteRecordRaw[] = [
     name: 'YieldBalance',
     component: () => import('@/views/rice/regulation/YieldBalance.vue'),
     meta: { title: '产量平衡', icon: 'DataLine', roles: ['RICE_ADMIN', 'REGULATOR'] },
+  },
+  {
+    path: '/rice/regulation/chain-proofs',
+    name: 'ChainProofManagement',
+    component: () => import('@/views/rice/regulation/ChainProof.vue'),
+    meta: { title: '链上存证', icon: 'Connection', roles: ['RICE_ADMIN', 'REGULATOR'] },
   },
 ]
 
@@ -139,6 +152,30 @@ const routes: RouteRecordRaw[] = [
     component: MainLayout,
     children: riceRoutes,
   },
+  {
+    path: '/pages/rice/trace/index',
+    name: 'MiniTraceIndex',
+    component: () => import('@/views/mini/TraceIndex.vue'),
+    meta: { title: '扫码溯源', public: true, hidden: true },
+  },
+  {
+    path: '/pages/rice/trace/verify',
+    name: 'MiniVerifyResult',
+    component: () => import('@/views/mini/VerifyResult.vue'),
+    meta: { title: '真伪鉴别', public: true, hidden: true },
+  },
+  {
+    path: '/pages/rice/trace/certificates',
+    name: 'MiniCertificates',
+    component: () => import('@/views/mini/Certificates.vue'),
+    meta: { title: '认证证书', public: true, hidden: true },
+  },
+  {
+    path: '/pages/rice/trace/chain-proof',
+    name: 'MiniChainProof',
+    component: () => import('@/views/mini/ChainProof.vue'),
+    meta: { title: '链上核验', public: true, hidden: true },
+  },
 ]
 
 const router = createRouter({
@@ -149,6 +186,8 @@ const router = createRouter({
 // ==================== 路由守卫 ====================
 router.beforeEach((to, _from, next) => {
   const userStore = useUserStore()
+
+  if (to.meta.public) return next()
 
   // 登录页 — 已登录用户直接跳转看板
   if (to.path === '/login') {

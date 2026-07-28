@@ -43,12 +43,15 @@ const emit = defineEmits<{
   'update:modelValue': [value: NutritionFacts]
 }>()
 
-const localValue = reactive<Record<string, string>>({ ...props.modelValue } || {
+const localValue = reactive<Record<string, string>>({
   energy: '',
   protein: '',
   fat: '',
   carbohydrate: '',
   sodium: '',
+  ...Object.fromEntries(
+    Object.entries(props.modelValue || {}).filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+  ),
 })
 
 const showAdd = ref(false)

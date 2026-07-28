@@ -53,11 +53,11 @@
     />
 
     <!-- 分页 -->
-    <div class="pagination-wrapper" v-if="showPagination && total > 0">
+    <div class="pagination-wrapper" v-if="showPagination && (total || 0) > 0">
       <el-pagination
         v-model:current-page="currentPage"
         v-model:page-size="currentPageSize"
-        :total="total"
+        :total="total || 0"
         :page-sizes="[10, 20, 50, 100]"
         layout="total, sizes, prev, pager, next, jumper"
         @size-change="handleSizeChange"
