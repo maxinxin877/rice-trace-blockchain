@@ -138,9 +138,11 @@ const allMenuItems: MenuItem[] = [
     group: '监管与风控',
     children: [
       { path: '/rice/trace-codes', title: '防伪码管理', icon: 'Ticket', roles: ['RICE_ADMIN', 'BRAND', 'REGULATOR'] },
+      { path: '/rice/channel-warnings', title: '窜货预警', icon: 'LocationInformation', roles: ['RICE_ADMIN', 'BRAND', 'REGULATOR'] },
       { path: '/rice/regulation/risk-warnings', title: '风险预警', icon: 'Warning', roles: ['RICE_ADMIN', 'BRAND', 'REGULATOR'] },
       { path: '/rice/regulation/audit-logs', title: '审计日志', icon: 'DocumentChecked', roles: ['RICE_ADMIN', 'REGULATOR'] },
       { path: '/rice/regulation/yield-balance', title: '产量平衡', icon: 'DataLine', roles: ['RICE_ADMIN', 'REGULATOR'] },
+      { path: '/rice/regulation/chain-proofs', title: '链上存证', icon: 'Connection', roles: ['RICE_ADMIN', 'REGULATOR'] },
     ],
   },
 ]

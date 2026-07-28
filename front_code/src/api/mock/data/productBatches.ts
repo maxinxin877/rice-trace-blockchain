@@ -2,11 +2,11 @@ import type { RiceProductBatch } from '@/types/productBatch'
 
 export const mockProductBatches: RiceProductBatch[] = [
   {
-    productBatchId: 'PROD20261001001',
+    productBatchId: 'PROD20260701001',
     tenantId: 'TENANT001',
     productName: '五常有机稻花香大米',
-    riceVariety: '五优稻4号',
-    brandName: '五常御品',
+    riceVariety: '稻花香2号',
+    brandName: '稻香源',
     packageSpec: '5kg/袋',
     standardNo: 'GB/T 19266',
     nutritionFacts: {
@@ -17,13 +17,13 @@ export const mockProductBatches: RiceProductBatch[] = [
       sodium: '2mg/100g',
     },
     certificationFileIds: ['file_cert_organic_001', 'file_cert_green_001'],
-    expectedSaleRegion: '北京、上海、广州、深圳',
+    expectedSaleRegion: '北京、天津、河北',
     status: 'PACKAGED',
     createdBy: 'BRAND_STAFF001',
-    createdAt: '2026-10-02T18:00:00',
+    createdAt: '2026-07-02T18:00:00',
   },
   {
-    productBatchId: 'PROD20261001002',
+    productBatchId: 'PROD20260701002',
     tenantId: 'TENANT001',
     productName: '五常大米（优质）',
     riceVariety: '五优稻4号',
@@ -40,10 +40,10 @@ export const mockProductBatches: RiceProductBatch[] = [
     expectedSaleRegion: '东北三省',
     status: 'PACKAGED',
     createdBy: 'BRAND_STAFF001',
-    createdAt: '2026-10-03T17:30:00',
+    createdAt: '2026-07-03T17:30:00',
   },
   {
-    productBatchId: 'PROD20261001003',
+    productBatchId: 'PROD20260701003',
     tenantId: 'TENANT001',
     productName: '稻花香2号精米',
     riceVariety: '稻花香2号',
@@ -60,10 +60,10 @@ export const mockProductBatches: RiceProductBatch[] = [
     expectedSaleRegion: '全国',
     status: 'PACKAGED',
     createdBy: 'BRAND_STAFF002',
-    createdAt: '2026-10-05T09:00:00',
+    createdAt: '2026-07-05T09:00:00',
   },
   {
-    productBatchId: 'PROD20261001004',
+    productBatchId: 'PROD20260701004',
     tenantId: 'TENANT001',
     productName: '盘锦蟹田大米',
     riceVariety: '辽粳9号',
@@ -73,6 +73,6 @@ export const mockProductBatches: RiceProductBatch[] = [
     expectedSaleRegion: '辽宁、北京',
     status: 'PENDING',
     createdBy: 'BRAND_STAFF001',
-    createdAt: '2026-10-06T10:00:00',
+    createdAt: '2026-07-06T10:00:00',
   },
 ]
