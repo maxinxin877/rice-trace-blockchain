@@ -2,77 +2,80 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.0</version>
+        <version>4.1.1</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
+
     <groupId>com.itheima</groupId>
-    <artifactId>demo</artifactId>
+    <artifactId>qukuailian</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>demo</name>
-    <description>demo</description>
-    <url/>
-    <licenses>
-        <license/>
-    </licenses>
-    <developers>
-        <developer/>
-    </developers>
-    <scm>
-        <connection/>
-        <developerConnection/>
-        <tag/>
-        <url/>
-    </scm>
+    <name>qukuailian</name>
+    <description>基于区块链的水稻产品质量安全溯源系统 - 后端服务</description>
+
     <properties>
         <java.version>17</java.version>
+        <mybatis-plus.version>3.5.17</mybatis-plus.version>
+        <!-- FISCO BCOS Java SDK：支持 FISCO BCOS 3.x（2.9.3 为当前最新稳定版） -->
+        <fisco-bcos-sdk.version>2.9.3</fisco-bcos-sdk.version>
     </properties>
+
     <dependencies>
+        <!-- ==================== Web（SpringMVC） ==================== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webmvc</artifactId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- 参数校验（jakarta.validation） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- ==================== MySQL + MyBatis-Plus ==================== -->
+        <!-- MyBatis-Plus 官方 Spring Boot 4 专用 starter（内含 mybatis + mybatis-spring） -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
+            <version>${mybatis-plus.version}</version>
+        </dependency>
+        <!-- 分页插件所需（MyBatis-Plus 3.5.9+ 拆分出的 jsqlparser 依赖） -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
+            <version>${mybatis-plus.version}</version>
+        </dependency>
+        <!-- MyBatis-Plus 3.5.17+ 中 IService/ServiceImpl 所在构件（包名 com.baomidou.mybatisplus.spring.service） -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring</artifactId>
+            <version>${mybatis-plus.version}</version>
+        </dependency>
+        <!-- MySQL 驱动（版本由 Spring Boot 统一管理） -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
-        </dependency>
+
+        <!-- ==================== Redis ==================== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webmvc-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- MyBatis 适配SpringBoot4 -->
-        <dependency>
-            <groupId>org.mybatis.spring.boot</groupId>
-            <artifactId>mybatis-spring-boot-starter</artifactId>
-            <version>4.0.0</version>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
-        <!-- Spring Security -->
+        <!-- ==================== FISCO BCOS Java SDK ==================== -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
+            <groupId>org.fisco-bcos.java-sdk</groupId>
+            <artifactId>fisco-bcos-java-sdk</artifactId>
+            <version>${fisco-bcos-sdk.version}</version>
         </dependency>
 
-        <!-- JWT -->
+        <!-- ==================== 认证（JWT） ==================== -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -91,17 +94,18 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Validation -->
+        <!-- ==================== 工具 ==================== -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
         </dependency>
 
-        <!-- MyBatis 分页插件 PageHelper -->
+        <!-- ==================== 测试 ==================== -->
         <dependency>
-            <groupId>com.github.pagehelper</groupId>
-            <artifactId>pagehelper-spring-boot-starter</artifactId>
-            <version>2.1.0</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -118,42 +122,6 @@
                         </exclude>
                     </excludes>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>default-compile</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                        <configuration>
-                            <annotationProcessorPaths>
-                                <path>
-                                    <groupId>org.projectlombok</groupId>
-                                    <artifactId>lombok</artifactId>
-                                </path>
-                            </annotationProcessorPaths>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>default-testCompile</id>
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>testCompile</goal>
-                        </goals>
-                        <configuration>
-                            <annotationProcessorPaths>
-                                <path>
-                                    <groupId>org.projectlombok</groupId>
-                                    <artifactId>lombok</artifactId>
-                                </path>
-                            </annotationProcessorPaths>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

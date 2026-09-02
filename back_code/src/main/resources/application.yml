@@ -1,27 +1,95 @@
+server:
+  port: 8080
+  # 接口文档基础路径为 /api/v1，故所有 Controller 映射去掉该前缀（如 /rice/fields）
+  servlet:
+    context-path: /api/v1
+
 spring:
   application:
-    name: demo
-
+    name: qukuailian
+  profiles:
+    active: dev
+  # ---------- MySQL ----------
   datasource:
-    url: jdbc:mysql://localhost:3306/rice_quality?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-    username: root
-    password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
-
+    url: jdbc:mysql://localhost:3306/qukuailian?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: 1234
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  # ---------- Redis ----------
   data:
     redis:
       host: localhost
       port: 6379
+      database: 0
+      password:
+      timeout: 5s
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+  # ---------- Jackson ----------
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+  # ---------- 文件上传 ----------
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 55MB
 
-# MyBatis配置
-mybatis:
+# ---------- MyBatis-Plus ----------
+mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
-  type-aliases-package: com.example.demo.entity
+  type-aliases-package: com.itheima.qukuailian.entity
   configuration:
     map-underscore-to-camel-case: true
+    # 开发阶段打印 SQL，生产环境请关闭
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
 
-# JWT配置
-jwt:
-  secret: YTk3ZjNiZTI2YzU0ZDg5ZjEyMzQ1Njc4OTBhYmNkZWYxMjM0NTY3ODkwYWJjZGVmMTIzNDU2Nzg5MGFiY2RlZg==
-  expiration: 86400000  # 24小时，单位毫秒
+# ---------- 应用自定义配置 ----------
+app:
+  jwt:
+    # HS256 签名密钥，长度必须 >= 32 字节（生产环境请放入环境变量/密钥管理）
+    secret: qukuailian-rice-trace-secret-key-2026-0123456789abcdef
+    # 令牌有效期（秒），默认 12 小时
+    expire-seconds: 43200
+  # 溯源查询缓存有效期（秒）
+  trace-cache-ttl: 300
+  file:
+    # 文件本地存储目录（相对项目根目录或绝对路径）
+    upload-dir: ./upload
+    # 文件访问 URL 前缀（含 context-path）
+    url-prefix: /api/v1/files
+  # 二维码内容前缀（小程序溯源页路径）
+  qr-base-url: pages/rice/trace/index?code=
+
+# ---------- FISCO BCOS ----------
+# 说明：
+#   bcos.enabled = false（默认）—— 不连接链，上链动作模拟成功，开发阶段即可跑通全流程；
+#   bcos.enabled = true —— 接入真实 FISCO BCOS（需先按 docs/FISCO_BCOS搭建指南.md 搭链并部署 Evidence 存证合约）。
+bcos:
+  enabled: false
+  # 群组 id 为整数（默认群组 group0 对应 0）
+  group-id: 0
+  # SDK 配置文件：相对进程工作目录（IDE 运行=项目根目录，Docker=/app）。
+  # 按搭建指南把 src/main/resources/bcos/config.toml 复制到项目根目录 bcos/ 后使用；
+  # 也支持 classpath: 前缀或绝对路径
+  config-file: bcos/config.toml
+  # Evidence 存证合约部署地址：在控制台 deploy Evidence 后回填，形如 0x1234...
+  contract-address: ""
+
+logging:
+  level:
+    com.itheima.qukuailian: debug
+    org.fisco.bcos: info
