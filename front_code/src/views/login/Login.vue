@@ -17,7 +17,7 @@
         <el-form-item label="账号" prop="username">
           <el-input
             v-model="form.username"
-            placeholder="请输入账号（如 admin1）"
+            placeholder="请输入账号"
             @keyup.enter="handleLogin"
           />
         </el-form-item>
@@ -44,20 +44,20 @@
         </el-form-item>
       </el-form>
 
-      <!-- 提示信息 -->
+      <!-- 后端测试账号提示 -->
       <el-alert
-        title="Mock 测试账号"
+        title="测试账号（后端）"
         type="info"
         :closable="false"
         style="margin-top: 16px"
       >
         <template #default>
           <div class="account-hints">
-            <div v-for="account in MOCK_ACCOUNTS" :key="account.username" class="hint-item">
+            <div v-for="account in BACKEND_ACCOUNTS" :key="account.username" class="hint-item">
               <span class="hint-user">{{ account.username }}</span>
               <span class="hint-sep">/</span>
-              <span class="hint-pass">123123123</span>
-              <span class="hint-role">— {{ getRoleLabel(account.role) }}</span>
+              <span class="hint-pass">123456</span>
+              <span class="hint-role">— {{ account.label }}</span>
             </div>
           </div>
         </template>
@@ -71,7 +71,7 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { useUserStore, MOCK_ACCOUNTS, ROLES } from '@/stores/user'
+import { useUserStore, ROLES } from '@/stores/user'
 import type { UserRole } from '@/stores/user'
 
 const router = useRouter()
@@ -90,29 +90,37 @@ const rules: FormRules = {
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
 }
 
+/** 后端真实账号（角色映射后显示前端角色名） */
+const BACKEND_ACCOUNTS: { username: string; label: string }[] = [
+  { username: 'admin', label: '系统管理员' },
+  { username: 'farmer1', label: '种植户' },
+  { username: 'keeper1', label: '仓储员' },
+  { username: 'factory1', label: '加工员' },
+  { username: 'brand1', label: '品牌运营' },
+  { username: 'regulator1', label: '监管人员' },
+]
+
 function getRoleLabel(code: UserRole): string {
   return ROLES.find((r) => r.code === code)?.label || code
 }
 
-function handleLogin() {
+async function handleLogin() {
   if (!formRef.value) return
-  formRef.value.validate((valid) => {
-    if (!valid) return
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
 
-    loading.value = true
-    // 模拟登录延迟
-    setTimeout(() => {
-      const result = userStore.login(form.username, form.password)
-      loading.value = false
-
-      if (result.success) {
-        ElMessage.success(`欢迎，${userStore.userName}（${userStore.roleInfo?.label}）`)
-        router.replace('/rice/dashboard')
-      } else {
-        ElMessage.error(result.message)
-      }
-    }, 500)
-  })
+  loading.value = true
+  try {
+    const result = await userStore.login(form.username, form.password)
+    if (result.success) {
+      ElMessage.success(`欢迎，${userStore.userName}（${userStore.roleInfo?.label}）`)
+      router.replace('/rice/dashboard')
+    } else {
+      ElMessage.error(result.message || '登录失败')
+    }
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 

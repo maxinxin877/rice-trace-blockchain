@@ -158,11 +158,13 @@ public class RiceTraceCodeServiceImpl extends ServiceImpl<RiceTraceCodeMapper, R
                                                       String traceCode, String riskLevel, String region,
                                                       String startTime, String endTime) {
         LambdaQueryWrapper<RiceRiskWarning> wrapper = new LambdaQueryWrapper<>();
+        LocalDateTime start = StringUtils.hasText(startTime) ? LocalDateTime.parse(startTime) : null;
+        LocalDateTime end = StringUtils.hasText(endTime) ? LocalDateTime.parse(endTime) : null;
         wrapper.in(RiceRiskWarning::getWarningType, CHANNEL_WARNING_TYPES)
                 .eq(StringUtils.hasText(traceCode), RiceRiskWarning::getBusinessId, traceCode)
                 .eq(StringUtils.hasText(riskLevel), RiceRiskWarning::getRiskLevel, riskLevel)
-                .ge(StringUtils.hasText(startTime), RiceRiskWarning::getCreateTime, LocalDateTime.parse(startTime))
-                .le(StringUtils.hasText(endTime), RiceRiskWarning::getCreateTime, LocalDateTime.parse(endTime))
+                .ge(start != null, RiceRiskWarning::getCreateTime, start)
+                .le(end != null, RiceRiskWarning::getCreateTime, end)
                 .orderByDesc(RiceRiskWarning::getCreateTime);
         return riskWarningMapper.selectPage(new Page<>(pageNo, pageSize), wrapper);
     }

@@ -9,8 +9,9 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
  * Redis 配置：key 使用 String 序列化，value 使用 JSON 序列化
+ * 本机未安装 Redis，暂时禁用（需 Redis 时恢复 @Configuration）
  */
-@Configuration
+// @Configuration
 public class RedisConfig {
 
     @Bean

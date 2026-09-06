@@ -153,7 +153,7 @@ const allMenuItems: MenuItem[] = [
 function isVisibleForRole(item: { roles?: UserRole[] }): boolean {
   // 没有设置 roles 表示所有角色可见
   if (!item.roles || item.roles.length === 0) return true
-  return item.roles.includes(userStore.role)
+  return item.roles.includes(userStore.role!)
 }
 
 /**

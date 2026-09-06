@@ -209,7 +209,7 @@ router.beforeEach((to, _from, next) => {
 
   // 检查角色是否有权访问此路由
   const routeRoles = to.meta.roles as UserRole[] | undefined
-  if (routeRoles && routeRoles.length > 0 && !routeRoles.includes(userStore.role)) {
+  if (routeRoles && routeRoles.length > 0 && userStore.role && !routeRoles.includes(userStore.role)) {
     // 无权限，跳转看板
     return next('/rice/dashboard')
   }

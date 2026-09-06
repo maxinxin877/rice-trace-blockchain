@@ -87,12 +87,14 @@ public class RiceStorageReceiptServiceImpl extends ServiceImpl<RiceStorageReceip
     public IPage<RiceStorageReceipt> page(long pageNo, long pageSize, String grainBatchId, String plantingBatchId,
                                           String warehouseId, String grainGrade, String startTime, String endTime) {
         LambdaQueryWrapper<RiceStorageReceipt> wrapper = new LambdaQueryWrapper<>();
+        LocalDateTime start = StringUtils.hasText(startTime) ? LocalDateTime.parse(startTime) : null;
+        LocalDateTime end = StringUtils.hasText(endTime) ? LocalDateTime.parse(endTime) : null;
         wrapper.eq(StringUtils.hasText(grainBatchId), RiceStorageReceipt::getGrainBatchId, grainBatchId)
                 .eq(StringUtils.hasText(plantingBatchId), RiceStorageReceipt::getPlantingBatchId, plantingBatchId)
                 .eq(StringUtils.hasText(warehouseId), RiceStorageReceipt::getWarehouseId, warehouseId)
                 .eq(StringUtils.hasText(grainGrade), RiceStorageReceipt::getGrainGrade, grainGrade)
-                .ge(StringUtils.hasText(startTime), RiceStorageReceipt::getStorageTime, LocalDateTime.parse(startTime))
-                .le(StringUtils.hasText(endTime), RiceStorageReceipt::getStorageTime, LocalDateTime.parse(endTime))
+                .ge(start != null, RiceStorageReceipt::getStorageTime, start)
+                .le(end != null, RiceStorageReceipt::getStorageTime, end)
                 .orderByDesc(RiceStorageReceipt::getStorageTime);
         return page(new Page<>(pageNo, pageSize), wrapper);
     }

@@ -1,0 +1,43 @@
+# ==================== 通用 ====================
+.DS_Store
+Thumbs.db
+
+# ==================== 日志 ====================
+*.log
+logs/
+
+# ==================== 编辑器 ====================
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ==================== 前端 (front_code) ====================
+front_code/node_modules/
+front_code/dist/
+front_code/dist-ssr/
+front_code/*.local
+front_code/.env.local
+
+# ==================== 后端 (back_code) ====================
+back_code/target/
+back_code/HELP.md
+back_code/.mvn/wrapper/maven-wrapper.jar
+back_code/.apt_generated
+back_code/.classpath
+back_code/.factorypath
+back_code/.project
+back_code/.settings
+back_code/.springBeans
+back_code/.sts4-cache
+back_code/*.iws
+back_code/*.iml
+back_code/*.ipr
+back_code/startup-error.log
+back_code/frontend/dist/
+
+# ==================== FISCO BCOS ====================
+/bcos/

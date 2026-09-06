@@ -84,11 +84,13 @@ public class RicePlantingBatchServiceImpl extends ServiceImpl<RicePlantingBatchM
     public IPage<RicePlantingBatch> page(long pageNo, long pageSize, String fieldId, String riceVariety,
                                          String status, String sowingDateStart, String sowingDateEnd) {
         LambdaQueryWrapper<RicePlantingBatch> wrapper = new LambdaQueryWrapper<>();
+        LocalDate sowingStart = StringUtils.hasText(sowingDateStart) ? LocalDate.parse(sowingDateStart) : null;
+        LocalDate sowingEnd = StringUtils.hasText(sowingDateEnd) ? LocalDate.parse(sowingDateEnd) : null;
         wrapper.eq(StringUtils.hasText(fieldId), RicePlantingBatch::getFieldId, fieldId)
                 .like(StringUtils.hasText(riceVariety), RicePlantingBatch::getRiceVariety, riceVariety)
                 .eq(StringUtils.hasText(status), RicePlantingBatch::getStatus, status)
-                .ge(StringUtils.hasText(sowingDateStart), RicePlantingBatch::getSowingDate, LocalDate.parse(sowingDateStart))
-                .le(StringUtils.hasText(sowingDateEnd), RicePlantingBatch::getSowingDate, LocalDate.parse(sowingDateEnd))
+                .ge(sowingStart != null, RicePlantingBatch::getSowingDate, sowingStart)
+                .le(sowingEnd != null, RicePlantingBatch::getSowingDate, sowingEnd)
                 .orderByDesc(RicePlantingBatch::getCreateTime);
         return page(new Page<>(pageNo, pageSize), wrapper);
     }

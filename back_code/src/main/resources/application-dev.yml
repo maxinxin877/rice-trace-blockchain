@@ -4,11 +4,11 @@ spring:
     url: jdbc:mysql://localhost:3306/qukuailian?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root
     password: 123456
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      database: 0
+  # 本机未安装 Redis，排除自动配置
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
 
 bcos:
   enabled: false

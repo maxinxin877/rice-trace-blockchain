@@ -18,9 +18,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 管理端/监管端/文件接口均需登录；小程序端（/mini/**）为公开接口（本项目暂不实现）
+        // /auth/login 和 /auth/register 放行，其他 /auth/** 需要认证
         registry.addInterceptor(authInterceptor)
-                .addPathPatterns("/rice/**", "/files/**");
+                .addPathPatterns("/rice/**", "/files/**", "/auth/**")
+                .excludePathPatterns("/auth/login", "/auth/register");
     }
 
     @Override

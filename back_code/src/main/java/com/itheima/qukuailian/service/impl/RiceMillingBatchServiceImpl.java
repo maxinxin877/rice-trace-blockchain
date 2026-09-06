@@ -95,11 +95,13 @@ public class RiceMillingBatchServiceImpl extends ServiceImpl<RiceMillingBatchMap
     public IPage<RiceMillingBatch> page(long pageNo, long pageSize, String grainBatchId, String productBatchId,
                                         String factoryId, String startTime, String endTime) {
         LambdaQueryWrapper<RiceMillingBatch> wrapper = new LambdaQueryWrapper<>();
+        LocalDateTime start = StringUtils.hasText(startTime) ? LocalDateTime.parse(startTime) : null;
+        LocalDateTime end = StringUtils.hasText(endTime) ? LocalDateTime.parse(endTime) : null;
         wrapper.eq(StringUtils.hasText(grainBatchId), RiceMillingBatch::getGrainBatchId, grainBatchId)
                 .eq(StringUtils.hasText(productBatchId), RiceMillingBatch::getProductBatchId, productBatchId)
                 .eq(StringUtils.hasText(factoryId), RiceMillingBatch::getFactoryId, factoryId)
-                .ge(StringUtils.hasText(startTime), RiceMillingBatch::getProcessStartTime, LocalDateTime.parse(startTime))
-                .le(StringUtils.hasText(endTime), RiceMillingBatch::getProcessStartTime, LocalDateTime.parse(endTime))
+                .ge(start != null, RiceMillingBatch::getProcessStartTime, start)
+                .le(end != null, RiceMillingBatch::getProcessStartTime, end)
                 .orderByDesc(RiceMillingBatch::getCreateTime);
         return page(new Page<>(pageNo, pageSize), wrapper);
     }

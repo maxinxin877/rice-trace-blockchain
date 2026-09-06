@@ -82,10 +82,12 @@ public class RiceFarmingLogServiceImpl extends ServiceImpl<RiceFarmingLogMapper,
     public IPage<RiceFarmingLog> page(String plantingBatchId, String operationType,
                                       String startTime, String endTime, long pageNo, long pageSize) {
         LambdaQueryWrapper<RiceFarmingLog> wrapper = new LambdaQueryWrapper<>();
+        LocalDateTime start = StringUtils.hasText(startTime) ? LocalDateTime.parse(startTime) : null;
+        LocalDateTime end = StringUtils.hasText(endTime) ? LocalDateTime.parse(endTime) : null;
         wrapper.eq(RiceFarmingLog::getPlantingBatchId, plantingBatchId)
                 .eq(StringUtils.hasText(operationType), RiceFarmingLog::getOperationType, operationType)
-                .ge(StringUtils.hasText(startTime), RiceFarmingLog::getOperationTime, LocalDateTime.parse(startTime))
-                .le(StringUtils.hasText(endTime), RiceFarmingLog::getOperationTime, LocalDateTime.parse(endTime))
+                .ge(start != null, RiceFarmingLog::getOperationTime, start)
+                .le(end != null, RiceFarmingLog::getOperationTime, end)
                 .orderByDesc(RiceFarmingLog::getOperationTime);
         return page(new Page<>(pageNo, pageSize), wrapper);
     }
