@@ -64,8 +64,9 @@ rice-trace-blockchain/
 │   └── pom.xml
 │
 ├── docs/
-│   ├── 前端联调演示脚本.md
-│   └── 前端联调问题清单.md
+│   ├── 部署指南.md
+│   ├── 数据库初始化指南.md
+│   └── FISCO_BCOS搭建指南.md
 │
 └── .gitignore                  # 三层 gitignore (根 + 前端 + 后端)
 ```
@@ -260,10 +261,11 @@ server {
 | VITE_USE_MOCK | false | 是否使用 Mock 数据 |
 | VITE_API_BASE_URL | /api/v1 | API 基础路径 |
 
-## 演示文档
+## 相关文档
 
-- [前端联调演示脚本](docs/前端联调演示脚本.md) — 推荐演示顺序与验收检查
-- [前端联调问题清单](docs/前端联调问题清单.md) — 已解决问题 + 联调约定
+- [部署指南](docs/部署指南.md) — 开发/生产/Docker 三种部署方式 + 常见问题
+- [数据库初始化指南](docs/数据库初始化指南.md) — MySQL 建库建表 + 种子账号
+- [FISCO BCOS 搭建指南](docs/FISCO_BCOS搭建指南.md) — 区块链节点搭建 + 合约部署
 
 ## License
 
