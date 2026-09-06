@@ -1,0 +1,36 @@
+# FISCO BCOS Java SDK 配置文件模板
+#
+# 使用方式（详见 docs/FISCO_BCOS搭建指南.md）：
+#   1. 搭好链后，把节点 sdk 证书目录复制到项目根目录 bcos/conf/：
+#        mkdir -p bcos/conf bcos/account
+#        cp -r <chain>/nodes/127.0.0.1/sdk/* bcos/conf/
+#   2. 把本模板复制到项目根目录 bcos/config.toml（SDK 首次启动会自动在 bcos/account 生成账户密钥）
+#   3. application.yml 中 bcos.config-file 指向 bcos/config.toml（相对项目根目录，IDE 与 Docker 均适用）
+#
+# 注意：以下路径均为相对进程工作目录（项目根目录 / Docker 的 /app）
+
+[cryptoMaterial]
+# 证书目录（存放 ca.crt / sdk.crt / sdk.key）
+certPath = "bcos/conf"
+# 是否使用国密算法，false 表示 ECDSA 普通算法
+useSMCrypto = "false"
+# 证书文件（按需配置，也可只配 certPath）
+caCert = "bcos/conf/ca.crt"
+sslCert = "bcos/conf/sdk.crt"
+sslKey = "bcos/conf/sdk.key"
+
+[network]
+# 节点 channel 端口（默认 20200），多节点以逗号分隔
+peers = ["127.0.0.1:20200"]
+# 消息超时时间(ms)
+messageTimeout = "10000"
+
+[account]
+# 账户密钥目录与文件（不存在时 SDK 自动生成）
+keyStoreDir = "bcos/account"
+accountFilePath = "bcos/account/ecdsa.pem"
+
+[threadPool]
+channelProcessorThreadSize = "16"
+receiptProcessorThreadSize = "16"
+maxBlockingQueueSize = "102400"
