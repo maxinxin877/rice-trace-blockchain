@@ -46,7 +46,7 @@
 
       <!-- 后端测试账号提示 -->
       <el-alert
-        title="测试账号（后端）"
+        title="测试账号"
         type="info"
         :closable="false"
         style="margin-top: 16px"

@@ -96,8 +96,8 @@ function handleLogout() {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(() => {
-    userStore.logout()
+  }).then(async () => {
+    await userStore.logout()
     ElMessage.success('已退出登录')
     router.replace('/login')
   }).catch(() => {})

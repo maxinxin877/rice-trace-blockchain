@@ -209,13 +209,8 @@ export const useUserStore = defineStore("user", () => {
     }
   }
 
-  /** 登出 */
+  /** 登出 — 先清本地状态，再异步通知后端（避免跳转时 token 未清空） */
   async function logout() {
-    try {
-      await authApi.logout();
-    } catch {
-      // 后端可能无此接口或网络问题，忽略
-    }
     token.value = "";
     userName.value = "";
     role.value = null;
@@ -223,6 +218,11 @@ export const useUserStore = defineStore("user", () => {
     localStorage.removeItem("token");
     localStorage.removeItem("userName");
     localStorage.removeItem("role");
+    try {
+      await authApi.logout();
+    } catch {
+      // 后端可能无此接口或网络问题，忽略
+    }
   }
 
   /** 初始化（从 localStorage 恢复登录状态） */
