@@ -6,7 +6,6 @@ import type {
   ChannelWarningRecord,
   GenerateTraceCodePayload,
   GenerateTraceCodeResult,
-  ScanLogRecord,
   TraceCodeQuery,
   TraceCodeRecord,
   TraceDetail,
@@ -83,12 +82,6 @@ export const traceabilityApi = {
       }
     })
     return ok({ activatedCount, failedCount: payload.traceCodes.length - activatedCount, chainStatus: 'PENDING' }, '激活完成')
-  },
-
-  async getScanLogs(traceCode: string): Promise<ApiResponse<ScanLogRecord[]>> {
-    if (!USE_MOCK) return (await get<ScanLogRecord[]>(`/rice/trace-codes/${traceCode}/scan-logs`)).data
-    await mockDelay(200)
-    return ok(scanLogs.filter((item) => item.traceCode === traceCode))
   },
 
   async getChannelWarnings(): Promise<ApiResponse<ChannelWarningRecord[]>> {

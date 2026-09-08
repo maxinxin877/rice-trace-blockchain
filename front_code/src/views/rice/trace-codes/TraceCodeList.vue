@@ -29,7 +29,6 @@
       <template #actions="{ row }">
         <el-button v-if="row.status === 'GENERATED'" type="success" link size="small" @click="activateCodes([row.traceCode])">激活</el-button>
         <el-button type="primary" link size="small" @click="openConsumer(row.traceCode)">扫码预览</el-button>
-        <el-button v-if="row.scanCount > 0" type="warning" link size="small" @click="showScanDetail(row)">扫码记录</el-button>
       </template>
     </DataTable>
 
@@ -56,18 +55,6 @@
         <el-button type="primary" @click="submitGenerate" :loading="genLoading">确认生成</el-button>
       </template>
     </el-dialog>
-
-    <!-- 扫码记录弹窗 -->
-    <el-dialog v-model="showScanLog" title="扫码记录" width="600px">
-      <el-table :data="currentScanLogs" border stripe size="small">
-        <el-table-column prop="scanTime" label="扫码时间" width="170" />
-        <el-table-column prop="region" label="地区" width="100" />
-        <el-table-column label="首次扫码" width="90">
-          <template #default="{ row }">{{ row.firstScan ? '是' : '否' }}</template>
-        </el-table-column>
-        <el-table-column prop="scene" label="场景" width="90" />
-      </el-table>
-    </el-dialog>
   </PageContainer>
 </template>
 
@@ -86,7 +73,7 @@ import { useTable } from '@/composables/useTable'
 import { TRACE_CODE_STATUS_MAP } from '@/utils/constants'
 import { traceabilityApi } from '@/api/modules/traceability'
 import { productBatchApi } from '@/api/modules/productBatch'
-import type { ScanLogRecord, TraceCodeRecord } from '@/types/traceability'
+import type { TraceCodeRecord } from '@/types/traceability'
 
 const router = useRouter()
 
@@ -165,14 +152,5 @@ async function activateCodes(codes: string[]) {
   } catch {
     // 用户取消时无需提示
   }
-}
-
-// 扫码记录
-const showScanLog = ref(false)
-const currentScanLogs = ref<ScanLogRecord[]>([])
-
-async function showScanDetail(row: TraceCodeRecord) {
-  currentScanLogs.value = (await traceabilityApi.getScanLogs(row.traceCode)).data
-  showScanLog.value = true
 }
 </script>

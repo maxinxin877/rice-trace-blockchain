@@ -21,13 +21,6 @@ async function mockGetList(query: RiceMillingBatchQuery): Promise<PageResponse<R
   return { code: 200, message: 'success', data }
 }
 
-async function mockGetById(id: string): Promise<ApiResponse<RiceMillingBatch>> {
-  await mockDelay()
-  const batch = mockMillingBatches.find((m) => m.millingBatchId === id)
-  if (!batch) return { code: 404, message: '加工批次不存在', data: null as unknown as RiceMillingBatch }
-  return { code: 200, message: 'success', data: batch }
-}
-
 async function mockCreate(dto: RiceMillingBatchCreateDTO): Promise<ApiResponse<RiceMillingBatch>> {
   await mockDelay()
   const newBatch: RiceMillingBatch = {
@@ -40,6 +33,13 @@ async function mockCreate(dto: RiceMillingBatchCreateDTO): Promise<ApiResponse<R
   }
   mockMillingBatches.unshift(newBatch)
   return { code: 200, message: '创建成功', data: newBatch }
+}
+
+async function mockGetById(millingBatchId: string): Promise<ApiResponse<RiceMillingBatch>> {
+  await mockDelay()
+  const batch = mockMillingBatches.find((m) => m.millingBatchId === millingBatchId)
+  if (!batch) return { code: 404, message: '加工批次不存在', data: null as unknown as RiceMillingBatch }
+  return { code: 200, message: 'success', data: batch }
 }
 
 async function mockComplete(dto: RiceMillingCompleteDTO): Promise<ApiResponse<RiceMillingBatch>> {
@@ -65,13 +65,13 @@ async function realGetList(query: RiceMillingBatchQuery): Promise<PageResponse<R
   return res.data as unknown as PageResponse<RiceMillingBatch>
 }
 
-async function realGetById(id: string): Promise<ApiResponse<RiceMillingBatch>> {
-  const res = await get<RiceMillingBatch>(`/rice/milling-batches/${id}`)
+async function realCreate(dto: RiceMillingBatchCreateDTO): Promise<ApiResponse<RiceMillingBatch>> {
+  const res = await post<RiceMillingBatch>('/rice/milling-batches', dto)
   return res.data as ApiResponse<RiceMillingBatch>
 }
 
-async function realCreate(dto: RiceMillingBatchCreateDTO): Promise<ApiResponse<RiceMillingBatch>> {
-  const res = await post<RiceMillingBatch>('/rice/milling-batches', dto)
+async function realGetById(millingBatchId: string): Promise<ApiResponse<RiceMillingBatch>> {
+  const res = await get<RiceMillingBatch>(`/rice/milling-batches/${millingBatchId}`)
   return res.data as ApiResponse<RiceMillingBatch>
 }
 

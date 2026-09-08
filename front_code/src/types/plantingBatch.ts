@@ -41,6 +41,21 @@ export interface RicePlantingBatchCreateDTO {
   certificationFileIds?: string[]
 }
 
+/** 种植批次更新 DTO（含审计原因） */
+export interface RicePlantingBatchUpdateDTO {
+  fieldId: string
+  riceVariety: string
+  seedSource: string
+  seedBatchNo?: string
+  seedCertificateFileId?: string
+  sowingDate: string
+  expectedHarvestDate?: string
+  organicCertified: boolean
+  greenCertified: boolean
+  certificationFileIds?: string[]
+  reason: string
+}
+
 /** 种植批次查询参数 */
 export interface RicePlantingBatchQuery {
   fieldId?: string

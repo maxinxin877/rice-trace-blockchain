@@ -1,48 +1,60 @@
 <template>
   <PageContainer title="农事记录">
-    <template #actions>
-      <el-button type="primary" @click="openCreate">
-        <el-icon><Plus /></el-icon> 新增农事记录
-      </el-button>
+    <!-- 批次列表视图 -->
+    <template v-if="!selectedBatch">
+      <el-alert type="info" :closable="false" title="请选择种植批次查看其农事记录" style="margin-bottom: 16px" />
+      <el-table
+        :data="batchOptions"
+        v-loading="batchLoading"
+        border
+        stripe
+        @row-click="selectBatch"
+        style="cursor: pointer"
+      >
+        <el-table-column prop="plantingBatchId" label="批次ID" width="200" />
+        <el-table-column prop="riceVariety" label="水稻品种" width="160" />
+        <el-table-column prop="fieldName" label="地块名称" min-width="160" />
+        <el-table-column label="批次状态" width="110">
+          <template #default="{ row }">
+            <StatusTag type="batch" :value="row.status" />
+          </template>
+        </el-table-column>
+      </el-table>
     </template>
 
-    <SearchForm :items="searchItems" @search="onSearch" @reset="onReset" />
-
-    <DataTable
-      :columns="columns"
-      :data="data"
-      :loading="loading"
-      :total="total"
-      :page="page"
-      :pageSize="pageSize"
-      @page-change="onPageChange"
-    >
-      <template #operationType="{ row }">
-        <StatusTag type="farming" :value="row.operationType" />
-      </template>
-      <template #chainStatus="{ row }">
-        <StatusTag type="chain" :value="row.chainStatus" />
-      </template>
-      <template #actions="{ row }">
-        <el-button type="primary" link size="small" @click="$router.push(`/rice/planting-batches/detail/${row.plantingBatchId}`)">
-          查看批次
+    <!-- 记录视图 -->
+    <template v-else>
+      <div class="batch-bar">
+        <el-button @click="backToBatchList">返回批次列表</el-button>
+        <span class="batch-info">
+          当前批次：{{ selectedBatch.plantingBatchId }} — {{ selectedBatch.riceVariety }}<template v-if="selectedBatch.fieldName">（{{ selectedBatch.fieldName }}）</template>
+        </span>
+        <el-button type="primary" @click="openCreate">
+          <el-icon><Plus /></el-icon> 新增农事记录
         </el-button>
-      </template>
-    </DataTable>
+      </div>
 
-    <!-- 新增农事记录弹窗 -->
+      <DataTable
+        :columns="columns"
+        :data="data"
+        :loading="loading"
+        :total="total"
+        :page="page"
+        :pageSize="pageSize"
+        @page-change="onPageChange"
+      >
+        <template #operationType="{ row }">
+          <StatusTag type="farming" :value="row.operationType" />
+        </template>
+        <template #chainStatus="{ row }">
+          <StatusTag type="chain" :value="row.chainStatus" />
+        </template>
+      </DataTable>
+    </template>
+
+    <!-- 新增农事记录弹窗（批次固定为当前选中批次） -->
     <el-dialog v-model="showForm" title="新增农事记录" width="600px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
-        <el-form-item label="关联批次" prop="plantingBatchId">
-          <el-select v-model="form.plantingBatchId" placeholder="请选择种植批次" filterable style="width: 100%">
-            <el-option
-              v-for="b in batchOptions"
-              :key="b.plantingBatchId"
-              :label="`${b.plantingBatchId} — ${b.riceVariety} (${b.fieldName})`"
-              :value="b.plantingBatchId"
-            />
-          </el-select>
-        </el-form-item>
         <el-form-item label="农事类型" prop="operationType">
           <el-select v-model="form.operationType" style="width: 100%">
             <el-option
@@ -54,7 +66,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="操作时间" prop="operationTime">
-          <el-date-picker v-model="form.operationTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" style="width: 100%" />
+          <el-date-picker v-model="form.operationTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" style="width: 100%" />
         </el-form-item>
         <el-form-item label="操作人" prop="operatorName">
           <el-input v-model="form.operatorName" placeholder="操作人姓名" />
@@ -98,8 +110,6 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import PageContainer from '@/components/common/PageContainer.vue'
-import SearchForm from '@/components/common/SearchForm.vue'
-import type { SearchItem } from '@/components/common/SearchForm.vue'
 import DataTable from '@/components/common/DataTable.vue'
 import type { TableColumn } from '@/components/common/DataTable.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
@@ -108,15 +118,15 @@ import { plantingBatchApi } from '@/api/modules/plantingBatch'
 import { useTable } from '@/composables/useTable'
 import { FARMING_OPERATION_TYPE_MAP } from '@/utils/constants'
 import type { RiceFarmingLog } from '@/types/farmingLog'
+import type { RicePlantingBatch } from '@/types/plantingBatch'
 
-const searchItems: SearchItem[] = [
-  { prop: 'plantingBatchId', label: '种植批次', type: 'input', placeholder: '输入批次ID' },
-  { prop: 'operationType', label: '农事类型', type: 'select', options: Object.entries(FARMING_OPERATION_TYPE_MAP).map(([value, item]) => ({ value, label: item.label })) },
-]
+// 批次选择
+const batchOptions = ref<RicePlantingBatch[]>([])
+const batchLoading = ref(false)
+const selectedBatch = ref<RicePlantingBatch | null>(null)
 
 const columns: TableColumn[] = [
   { prop: 'logId', label: '记录ID', width: 180 },
-  { prop: 'plantingBatchId', label: '关联批次', width: 180 },
   { prop: 'operationType', label: '农事类型', width: 90, slot: 'operationType' },
   { prop: 'operationTime', label: '操作时间', width: 170 },
   { prop: 'operatorName', label: '操作人', width: 90 },
@@ -126,31 +136,36 @@ const columns: TableColumn[] = [
 ]
 
 const fetchFn = (params: Record<string, unknown>) =>
-  farmingLogApi.getList(params) as Promise<{ data: { records: RiceFarmingLog[]; total: number } }>
+  farmingLogApi.getList({ ...params, plantingBatchId: selectedBatch.value?.plantingBatchId }) as Promise<{ data: { records: RiceFarmingLog[]; total: number } }>
 
-const { loading, data, total, page, pageSize, loadData, onSearch, onReset, onPageChange } = useTable<RiceFarmingLog>(fetchFn)
-
-// 批次选项
-const batchOptions = ref<{ plantingBatchId: string; riceVariety: string; fieldName: string }[]>([])
+const { loading, data, total, page, pageSize, loadData, onPageChange } = useTable<RiceFarmingLog>(fetchFn)
 
 onMounted(async () => {
-  loadData()
-  const res = await plantingBatchApi.getList({ pageSize: 100 })
-  if (res.code === 200) {
-    batchOptions.value = res.data.records.map((b) => ({
-      plantingBatchId: b.plantingBatchId,
-      riceVariety: b.riceVariety,
-      fieldName: b.fieldName || '',
-    }))
+  batchLoading.value = true
+  try {
+    const res = await plantingBatchApi.getList({ pageSize: 100 })
+    if (res.code === 200) batchOptions.value = res.data.records
+  } finally {
+    batchLoading.value = false
   }
 })
+
+function selectBatch(row: RicePlantingBatch) {
+  selectedBatch.value = row
+  loadData()
+}
+
+function backToBatchList() {
+  selectedBatch.value = null
+  data.value = []
+  total.value = 0
+}
 
 // 新增弹窗
 const showForm = ref(false)
 const submitting = ref(false)
 const formRef = ref<FormInstance>()
 const form = reactive({
-  plantingBatchId: '',
   operationType: '',
   operationTime: '',
   operatorName: '',
@@ -162,7 +177,6 @@ const form = reactive({
 })
 
 const rules: FormRules = {
-  plantingBatchId: [{ required: true, message: '请选择种植批次', trigger: 'change' }],
   operationType: [{ required: true, message: '请选择农事类型', trigger: 'change' }],
   operationTime: [{ required: true, message: '请选择操作时间', trigger: 'change' }],
   operatorName: [{ required: true, message: '请输入操作人', trigger: 'blur' }],
@@ -187,7 +201,6 @@ const rules: FormRules = {
 }
 
 function openCreate() {
-  form.plantingBatchId = ''
   form.operationType = ''
   form.operationTime = ''
   form.operatorName = ''
@@ -206,7 +219,7 @@ async function submitForm() {
   submitting.value = true
   try {
     await farmingLogApi.create({
-      plantingBatchId: form.plantingBatchId,
+      plantingBatchId: selectedBatch.value!.plantingBatchId,
       operationType: form.operationType as never,
       operationTime: form.operationTime,
       operatorId: 'FARMER001',
@@ -229,6 +242,19 @@ async function submitForm() {
 </script>
 
 <style scoped>
+.batch-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.batch-info {
+  font-size: 14px;
+  color: #4e5969;
+  flex: 1;
+}
+
 .form-hint {
   font-size: 12px;
   color: #909399;

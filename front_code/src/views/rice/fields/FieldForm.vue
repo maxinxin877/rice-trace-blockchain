@@ -53,7 +53,7 @@
         </el-col>
       </el-row>
 
-      <el-form-item label="详细地址">
+      <el-form-item label="详细地址" prop="address">
         <el-input v-model="form.address" placeholder="如: 五常镇民乐村三组" />
       </el-form-item>
 
@@ -72,37 +72,29 @@
         </el-col>
       </el-row>
 
-      <el-divider content-position="left">GIS 中心坐标</el-divider>
+      <el-divider content-position="left">GIS 边界坐标</el-divider>
 
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <el-form-item label="中心经度" prop="centerLng">
-            <el-input-number
-              v-model="form.centerLng"
-              :min="-180"
-              :max="180"
-              :precision="6"
-              :step="0.01"
-              placeholder="如: 127.5678"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="中心纬度" prop="centerLat">
-            <el-input-number
-              v-model="form.centerLat"
-              :min="-90"
-              :max="90"
-              :precision="6"
-              :step="0.01"
-              placeholder="如: 45.1234"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <div class="form-tip">输入地块中心点坐标（WGS84坐标系），经度范围 -180~180，纬度范围 -90~90</div>
+      <div v-for="(point, index) in form.gisBoundary" :key="index" class="boundary-row">
+        <el-row :gutter="12">
+          <el-col :span="10">
+            <el-form-item :label="`点${index + 1} 经度`" label-width="80px">
+              <el-input-number v-model="point.lng" :min="-180" :max="180" :precision="6" :step="0.01" placeholder="经度" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="10">
+            <el-form-item label="纬度" label-width="50px">
+              <el-input-number v-model="point.lat" :min="-90" :max="90" :precision="6" :step="0.01" placeholder="纬度" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="4">
+            <el-button v-if="form.gisBoundary.length > 3" type="danger" plain @click="removeBoundaryPoint(index)">
+              删除
+            </el-button>
+          </el-col>
+        </el-row>
+      </div>
+      <el-button type="primary" plain @click="addBoundaryPoint">+ 添加边界点</el-button>
+      <div class="form-tip">至少 3 个边界点，围成地块边界（WGS84坐标系，经度范围 -180~180，纬度范围 -90~90）</div>
 
       <el-divider content-position="left">照片</el-divider>
 
@@ -150,8 +142,7 @@ const form = reactive<{
   address: string
   areaMu: number
   soilType: string
-  centerLng: number | undefined
-  centerLat: number | undefined
+  gisBoundary: { lng: number | undefined; lat: number | undefined }[]
   basePhotoFileIds: string[]
   reason: string
 }>({
@@ -165,8 +156,11 @@ const form = reactive<{
   address: '',
   areaMu: 0,
   soilType: '',
-  centerLng: undefined,
-  centerLat: undefined,
+  gisBoundary: [
+    { lng: undefined, lat: undefined },
+    { lng: undefined, lat: undefined },
+    { lng: undefined, lat: undefined },
+  ],
   basePhotoFileIds: [],
   reason: '',
 })
@@ -179,31 +173,8 @@ const rules: FormRules = {
   province: [{ required: true, message: '请输入省', trigger: 'blur' }],
   city: [{ required: true, message: '请输入市', trigger: 'blur' }],
   district: [{ required: true, message: '请输入区/县', trigger: 'blur' }],
+  address: [{ required: true, message: '请输入详细地址', trigger: 'blur' }],
   areaMu: [{ required: true, message: '请输入地块面积', trigger: 'blur' }],
-  centerLng: [
-    { required: true, message: '请输入中心经度', trigger: 'blur' },
-    {
-      validator: (_rule, value, callback) => {
-        if (value !== undefined && (value < -180 || value > 180)) {
-          return callback(new Error('经度范围应在 -180 到 180 之间'))
-        }
-        callback()
-      },
-      trigger: 'blur',
-    },
-  ],
-  centerLat: [
-    { required: true, message: '请输入中心纬度', trigger: 'blur' },
-    {
-      validator: (_rule, value, callback) => {
-        if (value !== undefined && (value < -90 || value > 90)) {
-          return callback(new Error('纬度范围应在 -90 到 90 之间'))
-        }
-        callback()
-      },
-      trigger: 'blur',
-    },
-  ],
 }
 
 const submitting = ref(false)
@@ -214,8 +185,9 @@ onMounted(async () => {
     const res = await fieldApi.getById(id)
     if (res.code === 200 && res.data) {
       const d = res.data
-      // 尝试从 gisBoundary 取第一个点作为中心坐标
-      const center = d.gisBoundary && d.gisBoundary.length > 0 ? d.gisBoundary[0] : null
+      const boundary = d.gisBoundary && d.gisBoundary.length > 0
+        ? d.gisBoundary
+        : [{ lng: undefined, lat: undefined }, { lng: undefined, lat: undefined }, { lng: undefined, lat: undefined }]
       Object.assign(form, {
         fieldId: d.fieldId,
         fieldCode: d.fieldCode,
@@ -228,8 +200,7 @@ onMounted(async () => {
         address: d.address,
         areaMu: d.areaMu,
         soilType: d.soilType || '',
-        centerLng: center?.lng,
-        centerLat: center?.lat,
+        gisBoundary: boundary.map((p) => ({ lng: p.lng, lat: p.lat })),
         basePhotoFileIds: d.basePhotoFileIds || [],
         reason: '',
       })
@@ -237,19 +208,30 @@ onMounted(async () => {
   }
 })
 
+function addBoundaryPoint() {
+  form.gisBoundary.push({ lng: undefined, lat: undefined })
+}
+
+function removeBoundaryPoint(index: number) {
+  if (form.gisBoundary.length <= 3) return
+  form.gisBoundary.splice(index, 1)
+}
+
 async function handleSubmit() {
   if (!formRef.value) return
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
 
+  // 过滤出有效的边界点，并校验至少 3 个
+  const points = form.gisBoundary.filter((p) => p.lng !== undefined && p.lat !== undefined)
+  if (points.length < 3) {
+    ElMessage.warning('GIS 边界至少需要 3 个有效坐标点')
+    return
+  }
+  const gisBoundary: GisPoint[] = points.map((p) => ({ lng: p.lng!, lat: p.lat! }))
+
   submitting.value = true
   try {
-    // 用中心坐标构建 gisBoundary
-    const centerPoint: GisPoint = {
-      lng: form.centerLng!,
-      lat: form.centerLat!,
-    }
-
     if (isEdit.value) {
       await fieldApi.update({
         fieldId: form.fieldId!,
@@ -262,7 +244,7 @@ async function handleSubmit() {
         address: form.address,
         areaMu: form.areaMu,
         soilType: form.soilType,
-        gisBoundary: [centerPoint],
+        gisBoundary,
         basePhotoFileIds: form.basePhotoFileIds,
         reason: form.reason,
       })
@@ -278,7 +260,7 @@ async function handleSubmit() {
         district: form.district,
         address: form.address,
         areaMu: form.areaMu,
-        gisBoundary: [centerPoint],
+        gisBoundary,
         soilType: form.soilType,
         basePhotoFileIds: form.basePhotoFileIds,
       })
@@ -297,8 +279,11 @@ async function handleSubmit() {
 .form-tip {
   font-size: 12px;
   color: #909399;
-  margin-top: -8px;
+  margin-top: 8px;
   margin-bottom: 16px;
-  padding-left: 110px;
+}
+
+.boundary-row {
+  margin-bottom: 4px;
 }
 </style>

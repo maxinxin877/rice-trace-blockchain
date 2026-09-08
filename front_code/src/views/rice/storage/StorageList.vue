@@ -26,6 +26,7 @@
         </span>
       </template>
       <template #actions="{ row }">
+        <el-button type="info" link size="small" @click="openDetail(row)">详情</el-button>
         <el-button type="primary" link size="small" @click="openQuality(row)">质检</el-button>
       </template>
     </DataTable>
@@ -91,7 +92,7 @@
           </el-col>
         </el-row>
         <el-form-item label="入库时间" prop="storageTime">
-          <el-date-picker v-model="form.storageTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" style="width: 100%" />
+          <el-date-picker v-model="form.storageTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" style="width: 100%" />
         </el-form-item>
         <el-row :gutter="20">
           <el-col :span="12">
@@ -124,6 +125,27 @@
         <el-button @click="showQuality = false">取消</el-button>
         <el-button type="primary" @click="submitQuality" :loading="submittingQuality">提交质检</el-button>
       </template>
+    </el-dialog>
+
+    <!-- 入库单详情弹窗 -->
+    <el-dialog v-model="showDetail" title="入库单详情" width="680px">
+      <el-descriptions v-if="currentDetail" :column="2" border>
+        <el-descriptions-item label="入库单ID" :span="2">{{ currentDetail.storageReceiptId }}</el-descriptions-item>
+        <el-descriptions-item label="种植批次">{{ currentDetail.plantingBatchId }}</el-descriptions-item>
+        <el-descriptions-item label="原粮批次">{{ currentDetail.grainBatchId }}</el-descriptions-item>
+        <el-descriptions-item label="仓库ID">{{ currentDetail.warehouseId }}</el-descriptions-item>
+        <el-descriptions-item label="入仓编号">{{ currentDetail.warehouseCode }}</el-descriptions-item>
+        <el-descriptions-item label="收割面积(亩)">{{ currentDetail.harvestAreaMu }}</el-descriptions-item>
+        <el-descriptions-item label="湿谷重量(kg)">{{ currentDetail.wetGrainWeightKg }}</el-descriptions-item>
+        <el-descriptions-item label="水分(%)">{{ currentDetail.moisturePercent }}</el-descriptions-item>
+        <el-descriptions-item label="杂质(%)">{{ currentDetail.impurityPercent }}</el-descriptions-item>
+        <el-descriptions-item label="粮食等级">{{ currentDetail.grainGrade }}</el-descriptions-item>
+        <el-descriptions-item label="入库时间">{{ currentDetail.storageTime }}</el-descriptions-item>
+        <el-descriptions-item label="仓温(℃)">{{ currentDetail.temperature ?? '-' }}</el-descriptions-item>
+        <el-descriptions-item label="仓湿(%)">{{ currentDetail.humidity ?? '-' }}</el-descriptions-item>
+        <el-descriptions-item label="链上状态">{{ currentDetail.chainStatus }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{ currentDetail.createdAt }}</el-descriptions-item>
+      </el-descriptions>
     </el-dialog>
   </PageContainer>
 </template>
@@ -216,6 +238,20 @@ async function submitForm() {
     ElMessage.error('创建失败')
   } finally {
     submitting.value = false
+  }
+}
+
+// 详情
+const showDetail = ref(false)
+const currentDetail = ref<RiceStorageReceipt | null>(null)
+
+async function openDetail(row: RiceStorageReceipt) {
+  try {
+    const res = await storageReceiptApi.getById(row.storageReceiptId)
+    currentDetail.value = res.data
+    showDetail.value = true
+  } catch {
+    ElMessage.error('获取详情失败')
   }
 }
 

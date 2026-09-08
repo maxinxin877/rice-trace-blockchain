@@ -6,7 +6,7 @@ import type { ApiResponse, PageResponse } from '@/types/api'
 import type { RiceField, RiceFieldCreateDTO, RiceFieldUpdateDTO, RiceFieldQuery } from '@/types/field'
 import { mockFields } from '../mock/data/fields'
 import { mockDelay, mockPaginate, mockId } from '../mock'
-import { get, post, put, del } from '../request'
+import { get, post, put } from '../request'
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
 
@@ -55,6 +55,14 @@ async function mockUpdate(dto: RiceFieldUpdateDTO): Promise<ApiResponse<RiceFiel
   return { code: 200, message: '更新成功', data: mockFields[idx] }
 }
 
+async function mockBindPhotos(fieldId: string, fileIds: string[], reason: string): Promise<ApiResponse<Record<string, unknown>>> {
+  await mockDelay()
+  const idx = mockFields.findIndex((f) => f.fieldId === fieldId)
+  if (idx === -1) return { code: 404, message: '地块不存在', data: null as unknown as Record<string, unknown> }
+  mockFields[idx].basePhotoFileIds = fileIds
+  return { code: 200, message: '绑定成功', data: {} }
+}
+
 // ==================== 真实 API 实现 ====================
 async function realGetList(query: RiceFieldQuery): Promise<PageResponse<RiceField>> {
   const res = await get<PageResponse<RiceField>['data']>('/rice/fields', query as Record<string, unknown>)
@@ -76,9 +84,9 @@ async function realUpdate(dto: RiceFieldUpdateDTO): Promise<ApiResponse<RiceFiel
   return res.data as ApiResponse<RiceField>
 }
 
-async function realDelete(fieldId: string): Promise<ApiResponse<null>> {
-  const res = await del<null>(`/rice/fields/${fieldId}`)
-  return res.data as ApiResponse<null>
+async function realBindPhotos(fieldId: string, fileIds: string[], reason: string): Promise<ApiResponse<Record<string, unknown>>> {
+  const res = await post<Record<string, unknown>>(`/rice/fields/${fieldId}/photos`, { fileIds, reason })
+  return res.data as ApiResponse<Record<string, unknown>>
 }
 
 // ==================== 导出 ====================
@@ -87,5 +95,5 @@ export const fieldApi = {
   getById: USE_MOCK ? mockGetById : realGetById,
   create: USE_MOCK ? mockCreate : realCreate,
   update: USE_MOCK ? mockUpdate : realUpdate,
-  delete: USE_MOCK ? async (fieldId: string) => { await mockDelay(); return { code: 200, message: '删除成功', data: null } } : realDelete,
+  bindPhotos: USE_MOCK ? mockBindPhotos : realBindPhotos,
 }

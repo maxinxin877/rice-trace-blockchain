@@ -18,16 +18,17 @@
       @page-change="onPageChange"
     >
       <template #actions="{ row }">
-        <el-button type="primary" link size="small" @click="openEdit(row)">编辑</el-button>
         <el-button type="success" link size="small" @click="openTrace(row)">溯源</el-button>
       </template>
     </DataTable>
 
-    <!-- 新增/编辑弹窗 -->
-    <el-dialog v-model="showForm" :title="isEdit ? '编辑成品批次' : '新增成品批次'" width="700px">
+    <!-- 新增弹窗 -->
+    <el-dialog v-model="showForm" title="新增成品批次" width="700px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
-        <el-form-item v-if="!isEdit" label="成品批次ID" prop="productBatchId">
-          <el-input v-model="form.productBatchId" placeholder="如: PROD20261001001" />
+        <el-form-item label="成品批次ID" prop="productBatchId">
+          <el-select v-model="form.productBatchId" placeholder="请选择加工时创建的成品批次ID" filterable style="width: 100%">
+            <el-option v-for="pid in millingProductIds" :key="pid" :label="pid" :value="pid" />
+          </el-select>
         </el-form-item>
         <el-row :gutter="20">
           <el-col :span="12">
@@ -107,8 +108,9 @@ import DataTable from '@/components/common/DataTable.vue'
 import type { TableColumn } from '@/components/common/DataTable.vue'
 import NutritionEditor from '@/components/rice/NutritionEditor.vue'
 import { productBatchApi } from '@/api/modules/productBatch'
+import { millingBatchApi } from '@/api/modules/millingBatch'
 import { useTable } from '@/composables/useTable'
-import type { RiceProductBatch, NutritionFacts } from '@/types/productBatch'
+import type { RiceProductBatch, NutritionFacts, TraceResult } from '@/types/productBatch'
 
 // 溯源数据
 interface TraceNode {
@@ -119,46 +121,65 @@ interface TraceNode {
 const showTrace = ref(false)
 const traceData = ref<TraceNode[] | null>(null)
 
-// Mock 溯源链路（按 productBatchId 返回对应链路）
-const mockTraces: Record<string, TraceNode[]> = {
-  PROD20261001001: [
-    { step: '1', title: '地块档案', id: 'FIELD202607010001', color: '#409EFF', fields: { '地块名称': '五常一号稻田', '种植户': '张三丰', '面积': '150.50 亩', '土壤': '黑土', '坐标': '127.5678, 45.1234' } },
-    { step: '2', title: '种植批次', id: 'RPB202607010001', color: '#67C23A', fields: { '水稻品种': '五优稻4号', '种子来源': '五常市种子公司', '播种日期': '2026-05-01', '收割日期': '2026-09-20', '有机认证': '是' } },
-    { step: '3', title: '收储入库', id: 'SREC202607010001', color: '#E6A23C', fields: { '原粮批次': 'GRAIN20260920001', '入仓编号': 'WC-01-001', '湿谷重量': '97,500 kg', '水分': '25.50%', '等级': '一等' } },
-    { step: '4', title: '入库质检', id: 'QTEST202607010001', color: '#FF9800', fields: { '检测机构': '黑龙江省粮油质量检测中心', '综合结论': '合格', '水分': '14.50%', '出糙率': '79%', '整精米率': '58%' } },
-    { step: '5', title: '碾米加工', id: 'MB202607010001', color: '#00BCD4', fields: { '原粮出库量': '50,000 kg', '精米产出量': '32,500 kg', '产出率': '65%', '脱壳': '胶辊砻谷机', '包装': '真空包装' } },
-    { step: '6', title: '成品批次', id: 'PROD20261001001', color: '#9C27B0', fields: { '产品名称': '五常有机稻花香大米', '品牌': '五常御品', '规格': '5kg/袋', '标准号': 'GB/T 19266' } },
-    { step: '7', title: '防伪码', id: 'RC20261001...', color: '#F56C6C', fields: { '已生成': '100 枚', '已激活': '80 枚', '累计扫码': '128 次', '风险等级': '低' } },
-  ],
-  PROD20261001002: [
-    { step: '1', title: '地块档案', id: 'FIELD202607010001', color: '#409EFF', fields: { '地块名称': '五常一号稻田', '种植户': '张三丰', '面积': '150.50 亩' } },
-    { step: '2', title: '种植批次', id: 'RPB202607010001', color: '#67C23A', fields: { '水稻品种': '五优稻4号', '播种日期': '2026-05-01' } },
-    { step: '3', title: '收储入库', id: 'SREC202607010001', color: '#E6A23C', fields: { '原粮批次': 'GRAIN20260920001', '等级': '一等' } },
-    { step: '4', title: '碾米加工', id: 'MB202607010002', color: '#00BCD4', fields: { '原粮出库量': '47,500 kg', '精米产出量': '28,500 kg', '产出率': '60%' } },
-    { step: '5', title: '成品批次', id: 'PROD20261001002', color: '#9C27B0', fields: { '产品名称': '五常大米（优质）', '品牌': '五常御品', '规格': '10kg/袋' } },
-  ],
-  PROD20261001003: [
-    { step: '1', title: '地块档案', id: 'FIELD202607010002', color: '#409EFF', fields: { '地块名称': '五常二号稻田', '种植户': '李四喜', '面积': '200 亩' } },
-    { step: '2', title: '种植批次', id: 'RPB202607010002', color: '#67C23A', fields: { '水稻品种': '稻花香2号', '播种日期': '2026-05-10' } },
-    { step: '3', title: '收储入库', id: 'SREC202607010002', color: '#E6A23C', fields: { '原粮批次': 'GRAIN20260925001', '等级': '一等' } },
-    { step: '4', title: '碾米加工', id: 'MB202607010003', color: '#00BCD4', fields: { '工厂': 'FACTORY002', '四道抛光': 'AI色选机' } },
-    { step: '5', title: '成品批次', id: 'PROD20261001003', color: '#9C27B0', fields: { '产品名称': '稻花香2号精米', '品牌': '龙江香米', '规格': '2.5kg/盒' } },
-  ],
-}
-
 function openTrace(row: RiceProductBatch) {
-  traceData.value = mockTraces[row.productBatchId] || generateDefaultTrace(row)
-  showTrace.value = true
+  productBatchApi.trace(row.productBatchId).then((res) => {
+    if (res.code === 200) {
+      traceData.value = buildTraceNodes(res.data)
+      showTrace.value = true
+    }
+  }).catch(() => {
+    ElMessage.error('溯源查询失败')
+  })
 }
 
-function generateDefaultTrace(row: RiceProductBatch): TraceNode[] {
-  return [
-    { step: '1', title: '地块档案', id: '—', color: '#409EFF', fields: { '提示': '暂无关联地块数据' } },
-    { step: '2', title: '种植批次', id: '—', color: '#67C23A', fields: { '提示': '暂无关联种植批次' } },
-    { step: '3', title: '收储入库', id: '—', color: '#E6A23C', fields: { '提示': '暂无关联入库数据' } },
-    { step: '4', title: '碾米加工', id: '—', color: '#00BCD4', fields: { '提示': '暂无关联加工数据' } },
-    { step: '5', title: '成品批次', id: row.productBatchId, color: '#9C27B0', fields: { '产品名称': row.productName, '品牌': row.brandName, '规格': row.packageSpec, '标准号': row.standardNo } },
-  ]
+function buildTraceNodes(d: TraceResult): TraceNode[] {
+  const nodes: TraceNode[] = []
+  if (d.field) {
+    nodes.push({ step: '1', title: '地块档案', id: String(d.field.fieldId ?? '-'), color: '#409EFF', fields: {
+      '地块名称': String(d.field.fieldName ?? '-'),
+      '种植户': String(d.field.farmerName ?? '-'),
+      '所在地区': [d.field.province, d.field.city, d.field.district].filter(Boolean).join(' '),
+      '面积(亩)': String(d.field.areaMu ?? '-'),
+    }})
+  }
+  if (d.plantingBatch) {
+    nodes.push({ step: '2', title: '种植批次', id: String(d.plantingBatch.plantingBatchId ?? '-'), color: '#67C23A', fields: {
+      '水稻品种': String(d.plantingBatch.riceVariety ?? '-'),
+      '种子来源': String(d.plantingBatch.seedSource ?? '-'),
+      '播种日期': String(d.plantingBatch.sowingDate ?? '-'),
+    }})
+  }
+  if (d.storageReceipt) {
+    nodes.push({ step: '3', title: '收储入库', id: String(d.storageReceipt.storageReceiptId ?? '-'), color: '#E6A23C', fields: {
+      '原粮批次': String(d.storageReceipt.grainBatchId ?? '-'),
+      '入仓编号': String(d.storageReceipt.warehouseCode ?? '-'),
+      '湿谷重量(kg)': String(d.storageReceipt.wetGrainWeightKg ?? '-'),
+      '等级': String(d.storageReceipt.grainGrade ?? '-'),
+    }})
+  }
+  if (d.millingBatch) {
+    nodes.push({ step: '4', title: '碾米加工', id: String(d.millingBatch.millingBatchId ?? '-'), color: '#00BCD4', fields: {
+      '原粮批次': String(d.millingBatch.grainBatchId ?? '-'),
+      '精米产出量(kg)': d.millingBatch.riceOutputWeightKg != null ? String(d.millingBatch.riceOutputWeightKg) : '-',
+      '产出率(%)': d.millingBatch.yieldRate != null ? String(d.millingBatch.yieldRate) : '-',
+    }})
+  }
+  if (d.productBatch) {
+    nodes.push({ step: '5', title: '成品批次', id: d.productBatch.productBatchId, color: '#9C27B0', fields: {
+      '产品名称': String(d.productBatch.productName ?? '-'),
+      '品牌': String(d.productBatch.brandName ?? '-'),
+      '规格': String(d.productBatch.packageSpec ?? '-'),
+      '标准号': String(d.productBatch.standardNo ?? '-'),
+    }})
+  }
+  if (d.traceCodes && d.traceCodes.length) {
+    const activated = d.traceCodes.filter((t) => t.status === 'ACTIVATED').length
+    nodes.push({ step: '6', title: '防伪码', id: `${d.traceCodes.length} 枚`, color: '#F56C6C', fields: {
+      '已生成': `${d.traceCodes.length} 枚`,
+      '已激活': `${activated} 枚`,
+    }})
+  }
+  return nodes
 }
 
 const searchItems: SearchItem[] = [
@@ -183,14 +204,21 @@ const fetchFn = (params: Record<string, unknown>) =>
 
 const { loading, data, total, page, pageSize, loadData, onSearch, onReset, onPageChange } = useTable<RiceProductBatch>(fetchFn)
 
-onMounted(() => loadData())
+// 碾米加工中已定义的成品批次ID（下拉选项）
+const millingProductIds = ref<string[]>([])
+
+onMounted(async () => {
+  loadData()
+  const res = await millingBatchApi.getList({ pageSize: 100 })
+  if (res.code === 200) {
+    millingProductIds.value = [...new Set(res.data.records.map((m) => m.productBatchId).filter(Boolean))]
+  }
+})
 
 // 表单
 const showForm = ref(false)
-const isEdit = ref(false)
 const submitting = ref(false)
 const formRef = ref<FormInstance>()
-const editingId = ref('')
 const form = reactive({
   productBatchId: '',
   productName: '',
@@ -212,8 +240,6 @@ const rules: FormRules = {
 }
 
 function openCreate() {
-  isEdit.value = false
-  editingId.value = ''
   form.productBatchId = ''
   form.productName = ''
   form.brandName = ''
@@ -225,53 +251,24 @@ function openCreate() {
   showForm.value = true
 }
 
-function openEdit(row: RiceProductBatch) {
-  isEdit.value = true
-  editingId.value = row.productBatchId
-  form.productBatchId = row.productBatchId
-  form.productName = row.productName
-  form.brandName = row.brandName
-  form.riceVariety = row.riceVariety
-  form.packageSpec = row.packageSpec
-  form.standardNo = row.standardNo
-  form.expectedSaleRegion = row.expectedSaleRegion || ''
-  form.nutritionFacts = row.nutritionFacts || {}
-  showForm.value = true
-}
-
 async function submitForm() {
   if (!formRef.value) return
-  // 编辑时不需要校验 productBatchId
-  const rulesToValidate = isEdit.value ? { ...rules, productBatchId: [] } : rules
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
 
   submitting.value = true
   try {
-    if (isEdit.value) {
-      await productBatchApi.update(editingId.value, {
-        productName: form.productName,
-        brandName: form.brandName,
-        riceVariety: form.riceVariety,
-        packageSpec: form.packageSpec,
-        standardNo: form.standardNo,
-        expectedSaleRegion: form.expectedSaleRegion,
-        nutritionFacts: form.nutritionFacts,
-      })
-      ElMessage.success('成品批次更新成功')
-    } else {
-      await productBatchApi.create({
-        productBatchId: form.productBatchId,
-        productName: form.productName,
-        brandName: form.brandName,
-        riceVariety: form.riceVariety,
-        packageSpec: form.packageSpec,
-        standardNo: form.standardNo,
-        expectedSaleRegion: form.expectedSaleRegion,
-        nutritionFacts: form.nutritionFacts,
-      })
-      ElMessage.success('成品批次创建成功')
-    }
+    await productBatchApi.create({
+      productBatchId: form.productBatchId,
+      productName: form.productName,
+      brandName: form.brandName,
+      riceVariety: form.riceVariety,
+      packageSpec: form.packageSpec,
+      standardNo: form.standardNo,
+      expectedSaleRegion: form.expectedSaleRegion,
+      nutritionFacts: form.nutritionFacts,
+    })
+    ElMessage.success('成品批次创建成功')
     showForm.value = false
     loadData()
   } catch {

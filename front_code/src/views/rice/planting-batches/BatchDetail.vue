@@ -54,7 +54,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="操作时间" prop="operationTime">
-          <el-date-picker v-model="farmingForm.operationTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" style="width: 100%" />
+          <el-date-picker v-model="farmingForm.operationTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" style="width: 100%" />
         </el-form-item>
         <el-form-item label="操作人" prop="operatorName">
           <el-input v-model="farmingForm.operatorName" placeholder="操作人姓名" />

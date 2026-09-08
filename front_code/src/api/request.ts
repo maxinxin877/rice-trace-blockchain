@@ -19,6 +19,11 @@ instance.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    // 后端分页参数名为 pageNo，前端统一使用 page
+    if (config.params && config.params.page !== undefined && config.params.pageNo === undefined) {
+      config.params.pageNo = config.params.page
+      delete config.params.page
+    }
     return config
   },
   (error) => {
@@ -29,8 +34,20 @@ instance.interceptors.request.use(
 // 响应拦截器
 instance.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
+    // 文件/blob 下载响应直接放行（不做 JSON 归一化）
+    if (response.config.responseType === 'blob') return response
     const res = response.data
     if (res.code === 200 || res.code === 0) {
+      // 后端成功码为 0，统一为前端约定的 200
+      if (res.code === 0) res.code = 200
+      // 后端分页字段为 pageNo，统一为前端约定的 page/totalPages
+      const data = res.data as { records?: unknown[]; pageNo?: number; pageSize?: number; total?: number } | null
+      if (data && Array.isArray(data.records)) {
+        const pageNo = data.pageNo ?? 1
+        const pageSize = data.pageSize ?? 10
+        ;(data as Record<string, unknown>).page = pageNo
+        ;(data as Record<string, unknown>).totalPages = Math.ceil((data.total ?? 0) / pageSize)
+      }
       return response
     }
     // 业务错误
@@ -82,6 +99,12 @@ export function put<T = unknown>(url: string, data?: unknown, config?: AxiosRequ
 /** 通用 DELETE 请求 */
 export function del<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<ApiResponse<T>>> {
   return instance.delete(url, config)
+}
+
+/** 以 blob 形式下载文件（下载接口需鉴权，返回原始二进制） */
+export async function getBlob(url: string, config?: AxiosRequestConfig): Promise<Blob> {
+  const res = await instance.get(url, { ...config, responseType: 'blob' })
+  return res.data as Blob
 }
 
 export default instance

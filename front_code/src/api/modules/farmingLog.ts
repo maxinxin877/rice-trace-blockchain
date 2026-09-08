@@ -39,12 +39,26 @@ async function mockCreate(dto: RiceFarmingLogCreateDTO): Promise<ApiResponse<Ric
 
 // Real API stubs
 async function realGetList(query: RiceFarmingLogQuery): Promise<PageResponse<RiceFarmingLog>> {
-  const res = await get<PageResponse<RiceFarmingLog>['data']>('/rice/farming-logs', query as Record<string, unknown>)
+  const { plantingBatchId, operationType, operationTimeStart, operationTimeEnd, ...rest } = query
+  // 后端仅提供按种植批次嵌套的查询接口，无跨批次全量列表
+  if (!plantingBatchId) {
+    return {
+      code: 200,
+      message: 'success',
+      data: { records: [], total: 0, page: rest.page || 1, pageSize: rest.pageSize || 10, totalPages: 0 },
+    }
+  }
+  const params: Record<string, unknown> = { ...rest }
+  if (operationType) params.operationType = operationType
+  if (operationTimeStart) params.startTime = operationTimeStart
+  if (operationTimeEnd) params.endTime = operationTimeEnd
+  const res = await get<PageResponse<RiceFarmingLog>['data']>(`/rice/planting-batches/${plantingBatchId}/farming-logs`, params)
   return res.data as unknown as PageResponse<RiceFarmingLog>
 }
 
 async function realCreate(dto: RiceFarmingLogCreateDTO): Promise<ApiResponse<RiceFarmingLog>> {
-  const res = await post<RiceFarmingLog>('/rice/farming-logs', dto)
+  const { plantingBatchId, ...payload } = dto
+  const res = await post<RiceFarmingLog>(`/rice/planting-batches/${plantingBatchId}/farming-logs`, payload)
   return res.data as ApiResponse<RiceFarmingLog>
 }
 

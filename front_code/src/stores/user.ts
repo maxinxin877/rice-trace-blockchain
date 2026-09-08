@@ -225,6 +225,23 @@ export const useUserStore = defineStore("user", () => {
     }
   }
 
+  /** 从后端刷新当前登录用户信息（GET /auth/me） */
+  async function fetchMe() {
+    if (!token.value) return;
+    try {
+      const response = await authApi.getMe();
+      const data = response.data.data;
+      userName.value = data.nickname || data.username;
+      const frontendRole = mapBackendRole(data.role);
+      role.value = frontendRole;
+      permissions.value = ROLE_PERMISSIONS[frontendRole] || [];
+      localStorage.setItem("userName", userName.value);
+      localStorage.setItem("role", frontendRole);
+    } catch {
+      // 获取失败时保留本地缓存的登录状态
+    }
+  }
+
   /** 初始化（从 localStorage 恢复登录状态） */
   function initFromStorage() {
     const savedToken = localStorage.getItem("token");
@@ -247,6 +264,7 @@ export const useUserStore = defineStore("user", () => {
     hasPermission,
     login,
     logout,
+    fetchMe,
     initFromStorage,
   };
 });

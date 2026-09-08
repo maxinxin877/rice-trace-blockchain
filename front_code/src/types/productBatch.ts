@@ -40,11 +40,6 @@ export interface RiceProductBatchCreateDTO {
   expectedSaleRegion?: string
 }
 
-/** 成品批次更新 DTO */
-export interface RiceProductBatchUpdateDTO extends Partial<RiceProductBatchCreateDTO> {
-  reason?: string
-}
-
 /** 成品批次查询参数 */
 export interface RiceProductBatchQuery {
   productName?: string
@@ -53,4 +48,14 @@ export interface RiceProductBatchQuery {
   status?: string
   page?: number
   pageSize?: number
+}
+
+/** 溯源结果（完整链路：成品 → 加工 → 入库 → 种植 → 地块 + 防伪码） */
+export interface TraceResult {
+  productBatch: RiceProductBatch | null
+  millingBatch: Record<string, unknown> | null
+  storageReceipt: Record<string, unknown> | null
+  plantingBatch: Record<string, unknown> | null
+  field: Record<string, unknown> | null
+  traceCodes: Record<string, unknown>[]
 }

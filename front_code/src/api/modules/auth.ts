@@ -1,9 +1,18 @@
-import { post } from '@/api/request'
+import { get, post } from '@/api/request'
 
 /** 登录请求参数 */
 export interface LoginParams {
   username: string
   password: string
+}
+
+/** 注册请求参数 */
+export interface RegisterParams {
+  username: string
+  password: string
+  nickname?: string
+  phone?: string
+  role?: string
 }
 
 /** 登录返回的用户信息 */
@@ -30,6 +39,16 @@ export const authApi = {
   /** 登录 */
   login(params: LoginParams) {
     return post<LoginResult>('/auth/login', params)
+  },
+
+  /** 注册 */
+  register(params: RegisterParams) {
+    return post<void>('/auth/register', params)
+  },
+
+  /** 获取当前登录用户信息 */
+  getMe() {
+    return get<LoginUser>('/auth/me')
   },
 
   /** 退出登录 */

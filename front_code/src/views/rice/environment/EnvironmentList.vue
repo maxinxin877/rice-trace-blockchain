@@ -1,45 +1,57 @@
 <template>
   <PageContainer title="环境数据">
-    <template #actions>
-      <el-button type="primary" @click="openCreate">
-        <el-icon><Plus /></el-icon> 新增环境记录
-      </el-button>
+    <!-- 批次列表视图 -->
+    <template v-if="!selectedBatch">
+      <el-alert type="info" :closable="false" title="请选择种植批次查看其环境数据" style="margin-bottom: 16px" />
+      <el-table
+        :data="batchOptions"
+        v-loading="batchLoading"
+        border
+        stripe
+        @row-click="selectBatch"
+        style="cursor: pointer"
+      >
+        <el-table-column prop="plantingBatchId" label="批次ID" width="200" />
+        <el-table-column prop="riceVariety" label="水稻品种" width="160" />
+        <el-table-column prop="fieldName" label="地块名称" min-width="160" />
+        <el-table-column label="批次状态" width="110">
+          <template #default="{ row }">
+            <StatusTag type="batch" :value="row.status" />
+          </template>
+        </el-table-column>
+      </el-table>
     </template>
 
-    <SearchForm :items="searchItems" @search="onSearch" @reset="onReset" />
-
-    <DataTable
-      :columns="columns"
-      :data="data"
-      :loading="loading"
-      :total="total"
-      :page="page"
-      :pageSize="pageSize"
-      @page-change="onPageChange"
-    >
-      <template #sourceType="{ row }">
-        <StatusTag type="environment" :value="row.sourceType" />
-      </template>
-      <template #actions="{ row }">
-        <el-button type="primary" link size="small" @click="$router.push(`/rice/planting-batches/detail/${row.plantingBatchId}`)">
-          查看批次
+    <!-- 记录视图 -->
+    <template v-else>
+      <div class="batch-bar">
+        <el-button @click="backToBatchList">返回批次列表</el-button>
+        <span class="batch-info">
+          当前批次：{{ selectedBatch.plantingBatchId }} — {{ selectedBatch.riceVariety }}<template v-if="selectedBatch.fieldName">（{{ selectedBatch.fieldName }}）</template>
+        </span>
+        <el-button type="primary" @click="openCreate">
+          <el-icon><Plus /></el-icon> 新增环境记录
         </el-button>
-      </template>
-    </DataTable>
+      </div>
 
-    <!-- 新增环境记录弹窗 -->
+      <DataTable
+        :columns="columns"
+        :data="data"
+        :loading="loading"
+        :total="total"
+        :page="page"
+        :pageSize="pageSize"
+        @page-change="onPageChange"
+      >
+        <template #sourceType="{ row }">
+          <StatusTag type="environment" :value="row.sourceType" />
+        </template>
+      </DataTable>
+    </template>
+
+    <!-- 新增环境记录弹窗（批次固定为当前选中批次） -->
     <el-dialog v-model="showForm" title="新增环境记录" width="550px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
-        <el-form-item label="关联批次" prop="plantingBatchId">
-          <el-select v-model="form.plantingBatchId" placeholder="请选择种植批次" filterable style="width: 100%">
-            <el-option
-              v-for="b in batchOptions"
-              :key="b.plantingBatchId"
-              :label="`${b.plantingBatchId} — ${b.riceVariety}`"
-              :value="b.plantingBatchId"
-            />
-          </el-select>
-        </el-form-item>
         <el-form-item label="数据来源" prop="sourceType">
           <el-select v-model="form.sourceType" style="width: 100%">
             <el-option
@@ -51,7 +63,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="记录时间" prop="recordTime">
-          <el-date-picker v-model="form.recordTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" style="width: 100%" />
+          <el-date-picker v-model="form.recordTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" style="width: 100%" />
         </el-form-item>
         <el-row :gutter="20">
           <el-col :span="12">
@@ -97,8 +109,6 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import PageContainer from '@/components/common/PageContainer.vue'
-import SearchForm from '@/components/common/SearchForm.vue'
-import type { SearchItem } from '@/components/common/SearchForm.vue'
 import DataTable from '@/components/common/DataTable.vue'
 import type { TableColumn } from '@/components/common/DataTable.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
@@ -106,18 +116,16 @@ import { environmentRecordApi } from '@/api/modules/environmentRecord'
 import { plantingBatchApi } from '@/api/modules/plantingBatch'
 import { useTable } from '@/composables/useTable'
 import { ENVIRONMENT_SOURCE_TYPE_MAP } from '@/utils/constants'
-import { mockId } from '@/api/mock'
-import { mockEnvironmentRecords } from '@/api/mock/data/environmentRecords'
 import type { RiceEnvironmentRecord } from '@/types/environmentRecord'
+import type { RicePlantingBatch } from '@/types/plantingBatch'
 
-const searchItems: SearchItem[] = [
-  { prop: 'plantingBatchId', label: '种植批次', type: 'input', placeholder: '输入批次ID' },
-  { prop: 'sourceType', label: '数据来源', type: 'select', options: Object.entries(ENVIRONMENT_SOURCE_TYPE_MAP).map(([value, item]) => ({ value, label: item.label })) },
-]
+// 批次选择
+const batchOptions = ref<RicePlantingBatch[]>([])
+const batchLoading = ref(false)
+const selectedBatch = ref<RicePlantingBatch | null>(null)
 
 const columns: TableColumn[] = [
   { prop: 'environmentRecordId', label: '记录ID', width: 200 },
-  { prop: 'plantingBatchId', label: '关联批次', width: 180 },
   { prop: 'sourceType', label: '数据来源', width: 100, slot: 'sourceType' },
   { prop: 'recordTime', label: '记录时间', width: 170 },
   { prop: 'airTemperature', label: '气温(℃)', width: 100 },
@@ -128,30 +136,36 @@ const columns: TableColumn[] = [
 ]
 
 const fetchFn = (params: Record<string, unknown>) =>
-  environmentRecordApi.getList(params) as Promise<{ data: { records: RiceEnvironmentRecord[]; total: number } }>
+  environmentRecordApi.getList({ ...params, plantingBatchId: selectedBatch.value?.plantingBatchId }) as Promise<{ data: { records: RiceEnvironmentRecord[]; total: number } }>
 
-const { loading, data, total, page, pageSize, loadData, onSearch, onReset, onPageChange } = useTable<RiceEnvironmentRecord>(fetchFn)
-
-// 批次选项
-const batchOptions = ref<{ plantingBatchId: string; riceVariety: string }[]>([])
+const { loading, data, total, page, pageSize, loadData, onPageChange } = useTable<RiceEnvironmentRecord>(fetchFn)
 
 onMounted(async () => {
-  loadData()
-  const res = await plantingBatchApi.getList({ pageSize: 100 })
-  if (res.code === 200) {
-    batchOptions.value = res.data.records.map((b) => ({
-      plantingBatchId: b.plantingBatchId,
-      riceVariety: b.riceVariety,
-    }))
+  batchLoading.value = true
+  try {
+    const res = await plantingBatchApi.getList({ pageSize: 100 })
+    if (res.code === 200) batchOptions.value = res.data.records
+  } finally {
+    batchLoading.value = false
   }
 })
+
+function selectBatch(row: RicePlantingBatch) {
+  selectedBatch.value = row
+  loadData()
+}
+
+function backToBatchList() {
+  selectedBatch.value = null
+  data.value = []
+  total.value = 0
+}
 
 // 新增弹窗
 const showForm = ref(false)
 const submitting = ref(false)
 const formRef = ref<FormInstance>()
 const form = reactive({
-  plantingBatchId: '',
   sourceType: 'MANUAL',
   recordTime: '',
   airTemperature: undefined as number | undefined,
@@ -163,13 +177,11 @@ const form = reactive({
 })
 
 const rules: FormRules = {
-  plantingBatchId: [{ required: true, message: '请选择种植批次', trigger: 'change' }],
   sourceType: [{ required: true, message: '请选择数据来源', trigger: 'change' }],
   recordTime: [{ required: true, message: '请选择记录时间', trigger: 'change' }],
 }
 
 function openCreate() {
-  form.plantingBatchId = ''
   form.sourceType = 'MANUAL'
   form.recordTime = ''
   form.airTemperature = undefined
@@ -187,12 +199,8 @@ async function submitForm() {
   if (!valid) return
   submitting.value = true
   try {
-    // Mock: 直接加到本地数据
-    const newRecord: RiceEnvironmentRecord = {
-      environmentRecordId: mockId('ENV'),
-      tenantId: 'TENANT001',
-      plantingBatchId: form.plantingBatchId,
-      sourceType: form.sourceType as never,
+    await environmentRecordApi.create(selectedBatch.value!.plantingBatchId, {
+      sourceType: form.sourceType,
       recordTime: form.recordTime,
       airTemperature: form.airTemperature,
       airHumidity: form.airHumidity,
@@ -200,10 +208,7 @@ async function submitForm() {
       rainfall: form.rainfall,
       windSpeed: form.windSpeed,
       remark: form.remark,
-      createdBy: 'ADMIN001',
-      createdAt: new Date().toISOString(),
-    }
-    mockEnvironmentRecords.unshift(newRecord)
+    })
     ElMessage.success('环境记录添加成功')
     showForm.value = false
     loadData()
@@ -214,3 +219,18 @@ async function submitForm() {
   }
 }
 </script>
+
+<style scoped>
+.batch-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.batch-info {
+  font-size: 14px;
+  color: #4e5969;
+  flex: 1;
+}
+</style>

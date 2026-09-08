@@ -31,11 +31,12 @@
       </template>
       <template #actions="{ row }">
         <el-button type="primary" link size="small" @click="viewDetail(row.plantingBatchId)">详情</el-button>
+        <el-button type="warning" link size="small" @click="openEdit(row)">编辑</el-button>
       </template>
     </DataTable>
 
-    <!-- 新增种植批次弹窗 -->
-    <el-dialog v-model="showForm" title="新增种植批次" width="600px">
+    <!-- 新增/编辑种植批次弹窗 -->
+    <el-dialog v-model="showForm" :title="isEdit ? '编辑种植批次' : '新增种植批次'" width="600px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="选择地块" prop="fieldId">
           <el-select v-model="form.fieldId" placeholder="请选择地块" filterable style="width: 100%">
@@ -80,10 +81,13 @@
             </el-form-item>
           </el-col>
         </el-row>
+        <el-form-item v-if="isEdit" label="修改原因" prop="reason">
+          <el-input v-model="form.reason" type="textarea" :rows="2" placeholder="请输入修改原因（审计需要）" />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showForm = false">取消</el-button>
-        <el-button type="primary" @click="submitForm" :loading="submitting">确认创建</el-button>
+        <el-button type="primary" @click="submitForm" :loading="submitting">{{ isEdit ? '确认修改' : '确认创建' }}</el-button>
       </template>
     </el-dialog>
   </PageContainer>
@@ -150,8 +154,10 @@ function viewDetail(id: string) {
   router.push(`/rice/planting-batches/detail/${id}`)
 }
 
-// 新增弹窗
+// 新增/编辑弹窗
 const showForm = ref(false)
+const isEdit = ref(false)
+const editingId = ref('')
 const submitting = ref(false)
 const formRef = ref<FormInstance>()
 const form = reactive({
@@ -163,6 +169,7 @@ const form = reactive({
   expectedHarvestDate: '',
   organicCertified: false,
   greenCertified: false,
+  reason: '',
 })
 
 const rules: FormRules = {
@@ -170,9 +177,12 @@ const rules: FormRules = {
   riceVariety: [{ required: true, message: '请输入水稻品种', trigger: 'blur' }],
   seedSource: [{ required: true, message: '请输入种子来源', trigger: 'blur' }],
   sowingDate: [{ required: true, message: '请选择播种日期', trigger: 'change' }],
+  reason: [{ required: true, message: '请输入修改原因', trigger: 'blur' }],
 }
 
 function openCreate() {
+  isEdit.value = false
+  editingId.value = ''
   form.fieldId = ''
   form.riceVariety = ''
   form.seedSource = ''
@@ -181,6 +191,22 @@ function openCreate() {
   form.expectedHarvestDate = ''
   form.organicCertified = false
   form.greenCertified = false
+  form.reason = ''
+  showForm.value = true
+}
+
+function openEdit(row: RicePlantingBatch) {
+  isEdit.value = true
+  editingId.value = row.plantingBatchId
+  form.fieldId = row.fieldId
+  form.riceVariety = row.riceVariety
+  form.seedSource = row.seedSource
+  form.seedBatchNo = row.seedBatchNo || ''
+  form.sowingDate = row.sowingDate
+  form.expectedHarvestDate = row.expectedHarvestDate || ''
+  form.organicCertified = row.organicCertified
+  form.greenCertified = row.greenCertified
+  form.reason = ''
   showForm.value = true
 }
 
@@ -190,12 +216,27 @@ async function submitForm() {
   if (!valid) return
   submitting.value = true
   try {
-    await plantingBatchApi.create({ ...form })
-    ElMessage.success('种植批次创建成功')
+    if (isEdit.value) {
+      await plantingBatchApi.update(editingId.value, {
+        fieldId: form.fieldId,
+        riceVariety: form.riceVariety,
+        seedSource: form.seedSource,
+        seedBatchNo: form.seedBatchNo,
+        sowingDate: form.sowingDate,
+        expectedHarvestDate: form.expectedHarvestDate,
+        organicCertified: form.organicCertified,
+        greenCertified: form.greenCertified,
+        reason: form.reason,
+      })
+      ElMessage.success('种植批次更新成功')
+    } else {
+      await plantingBatchApi.create({ ...form })
+      ElMessage.success('种植批次创建成功')
+    }
     showForm.value = false
     loadData()
   } catch {
-    ElMessage.error('创建失败')
+    ElMessage.error('操作失败')
   } finally {
     submitting.value = false
   }

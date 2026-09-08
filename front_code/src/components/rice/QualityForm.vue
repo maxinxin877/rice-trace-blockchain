@@ -7,7 +7,7 @@
       <el-date-picker
         v-model="form.testTime"
         type="datetime"
-        value-format="YYYY-MM-DD HH:mm:ss"
+        value-format="YYYY-MM-DDTHH:mm:ss"
         placeholder="选择检测时间"
         style="width: 100%"
       />

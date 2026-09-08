@@ -68,7 +68,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Fold, Expand, SwitchButton } from '@element-plus/icons-vue'
@@ -86,6 +86,11 @@ const sidebarCollapsed = computed(() => appStore.sidebarCollapsed)
 const activeMenu = computed(() => route.path)
 
 const currentTitle = computed(() => route.meta?.title as string || '')
+
+onMounted(() => {
+  // 从后端刷新当前登录用户信息（GET /auth/me）
+  userStore.fetchMe()
+})
 
 function toggleSidebar() {
   appStore.toggleSidebar()

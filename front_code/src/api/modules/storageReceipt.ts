@@ -21,13 +21,6 @@ async function mockGetList(query: RiceStorageReceiptQuery): Promise<PageResponse
   return { code: 200, message: 'success', data }
 }
 
-async function mockGetById(id: string): Promise<ApiResponse<RiceStorageReceipt>> {
-  await mockDelay()
-  const receipt = mockStorageReceipts.find((r) => r.storageReceiptId === id)
-  if (!receipt) return { code: 404, message: '入库单不存在', data: null as unknown as RiceStorageReceipt }
-  return { code: 200, message: 'success', data: receipt }
-}
-
 async function mockCreate(dto: RiceStorageReceiptCreateDTO): Promise<ApiResponse<RiceStorageReceipt>> {
   await mockDelay()
   const newReceipt: RiceStorageReceipt = {
@@ -42,19 +35,26 @@ async function mockCreate(dto: RiceStorageReceiptCreateDTO): Promise<ApiResponse
   return { code: 200, message: '创建成功', data: newReceipt }
 }
 
+async function mockGetById(storageReceiptId: string): Promise<ApiResponse<RiceStorageReceipt>> {
+  await mockDelay()
+  const receipt = mockStorageReceipts.find((r) => r.storageReceiptId === storageReceiptId)
+  if (!receipt) return { code: 404, message: '入库单不存在', data: null as unknown as RiceStorageReceipt }
+  return { code: 200, message: 'success', data: receipt }
+}
+
 // Real API stubs
 async function realGetList(query: RiceStorageReceiptQuery): Promise<PageResponse<RiceStorageReceipt>> {
   const res = await get<PageResponse<RiceStorageReceipt>['data']>('/rice/storage-receipts', query as Record<string, unknown>)
   return res.data as unknown as PageResponse<RiceStorageReceipt>
 }
 
-async function realGetById(id: string): Promise<ApiResponse<RiceStorageReceipt>> {
-  const res = await get<RiceStorageReceipt>(`/rice/storage-receipts/${id}`)
+async function realCreate(dto: RiceStorageReceiptCreateDTO): Promise<ApiResponse<RiceStorageReceipt>> {
+  const res = await post<RiceStorageReceipt>('/rice/storage-receipts', dto)
   return res.data as ApiResponse<RiceStorageReceipt>
 }
 
-async function realCreate(dto: RiceStorageReceiptCreateDTO): Promise<ApiResponse<RiceStorageReceipt>> {
-  const res = await post<RiceStorageReceipt>('/rice/storage-receipts', dto)
+async function realGetById(storageReceiptId: string): Promise<ApiResponse<RiceStorageReceipt>> {
+  const res = await get<RiceStorageReceipt>(`/rice/storage-receipts/${storageReceiptId}`)
   return res.data as ApiResponse<RiceStorageReceipt>
 }
 

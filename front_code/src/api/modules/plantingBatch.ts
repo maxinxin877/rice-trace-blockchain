@@ -2,7 +2,7 @@
  * 种植批次 API 模块
  */
 import type { ApiResponse, PageResponse } from '@/types/api'
-import type { RicePlantingBatch, RicePlantingBatchCreateDTO, RicePlantingBatchQuery } from '@/types/plantingBatch'
+import type { RicePlantingBatch, RicePlantingBatchCreateDTO, RicePlantingBatchUpdateDTO, RicePlantingBatchQuery } from '@/types/plantingBatch'
 import { mockPlantingBatches } from '../mock/data/plantingBatches'
 import { mockFields } from '../mock/data/fields'
 import { mockDelay, mockPaginate, mockId } from '../mock'
@@ -47,7 +47,7 @@ async function mockCreate(dto: RicePlantingBatchCreateDTO): Promise<ApiResponse<
   return { code: 200, message: '创建成功', data: newBatch }
 }
 
-async function mockUpdate(batchId: string, dto: Partial<RicePlantingBatchCreateDTO>): Promise<ApiResponse<RicePlantingBatch>> {
+async function mockUpdate(batchId: string, dto: RicePlantingBatchUpdateDTO): Promise<ApiResponse<RicePlantingBatch>> {
   await mockDelay()
   const idx = mockPlantingBatches.findIndex((b) => b.plantingBatchId === batchId)
   if (idx === -1) return { code: 404, message: '种植批次不存在', data: null as unknown as RicePlantingBatch }
@@ -71,7 +71,7 @@ async function realCreate(dto: RicePlantingBatchCreateDTO): Promise<ApiResponse<
   return res.data as ApiResponse<RicePlantingBatch>
 }
 
-async function realUpdate(batchId: string, dto: Partial<RicePlantingBatchCreateDTO>): Promise<ApiResponse<RicePlantingBatch>> {
+async function realUpdate(batchId: string, dto: RicePlantingBatchUpdateDTO): Promise<ApiResponse<RicePlantingBatch>> {
   const res = await put<RicePlantingBatch>(`/rice/planting-batches/${batchId}`, dto)
   return res.data as ApiResponse<RicePlantingBatch>
 }

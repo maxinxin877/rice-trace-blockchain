@@ -34,6 +34,7 @@
       <el-upload
         :action="uploadUrl"
         :headers="uploadHeaders"
+        :data="uploadData"
         :accept="accept"
         :multiple="multiple"
         :limit="limit"
@@ -64,6 +65,7 @@ const props = defineProps<{
   limit?: number
   maxSizeMB?: number
   tip?: string
+  bizType?: string
 }>()
 
 const emit = defineEmits<{
@@ -75,8 +77,10 @@ const isMock = import.meta.env.VITE_USE_MOCK === 'true'
 // ========== 真实模式 ==========
 const uploadUrl = computed(() => {
   const base = import.meta.env.VITE_API_BASE_URL || '/api/v1'
-  return `${base}/files/upload`
+  return `${base}/files`
 })
+
+const uploadData = computed(() => ({ bizType: props.bizType || 'FIELD_PHOTO' }))
 
 const uploadHeaders = computed(() => ({
   Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
@@ -95,7 +99,7 @@ const beforeUpload: UploadProps['beforeUpload'] = (file) => {
 }
 
 const handleSuccess: UploadProps['onSuccess'] = (response: any) => {
-  if (response?.code === 200 && response?.data?.fileId) {
+  if ((response?.code === 200 || response?.code === 0) && response?.data?.fileId) {
     const ids = [...(props.modelValue || []), response.data.fileId]
     emit('update:modelValue', ids)
   }
