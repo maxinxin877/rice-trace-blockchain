@@ -147,6 +147,7 @@ public class RiceStorageReceiptServiceImpl extends ServiceImpl<RiceStorageReceip
         for (QualityTestItemDTO itemDto : dto.getTestItems()) {
             RiceQualityTestItem item = new RiceQualityTestItem();
             BeanUtils.copyProperties(itemDto, item);
+            item.setItemValue(itemDto.getValue());
             item.setQualityTestId(test.getQualityTestId());
             items.add(item);
             qualityTestItemMapper.insert(item);

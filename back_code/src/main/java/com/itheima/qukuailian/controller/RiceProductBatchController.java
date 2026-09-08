@@ -12,6 +12,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 /**
  * 成品米批次接口（接口文档 v1.1 §5.22-§5.23）
  */
@@ -41,5 +43,12 @@ public class RiceProductBatchController {
         IPage<RiceProductBatch> result = productBatchService
                 .page(pageNo, pageSize, productBatchId, productName, brandName, status);
         return Result.success(PageResult.of(result));
+    }
+
+    /** 溯源：查询成品批次完整链路（成品 → 加工 → 入库 → 种植 → 地块 + 防伪码） */
+    @GetMapping("/{productBatchId}/trace")
+    @RequirePermission(PermissionConstants.RICE_PRODUCT_BATCH_VIEW)
+    public Result<Map<String, Object>> trace(@PathVariable String productBatchId) {
+        return Result.success(productBatchService.trace(productBatchId));
     }
 }

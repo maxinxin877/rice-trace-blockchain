@@ -1,6 +1,7 @@
 # ==================== 通用 ====================
 .DS_Store
 Thumbs.db
+.zcode/
 
 # ==================== 日志 ====================
 *.log
@@ -21,9 +22,11 @@ front_code/dist/
 front_code/dist-ssr/
 front_code/*.local
 front_code/.env.local
+front_code/.env.production
 
 # ==================== 后端 (back_code) ====================
 back_code/target/
+back_code/upload/
 back_code/HELP.md
 back_code/.mvn/wrapper/maven-wrapper.jar
 back_code/.apt_generated
