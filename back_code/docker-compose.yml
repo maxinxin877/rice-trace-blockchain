@@ -21,7 +21,8 @@ services:
     container_name: rice-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请在 .env 中设置 MYSQL_ROOT_PASSWORD}
+      # 必填：在 back_code/.env 中设置（缺失则 compose 直接报错退出）
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?}
       MYSQL_DATABASE: qukuailian
       TZ: Asia/Shanghai
     command:
@@ -79,8 +80,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:?}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: "6379"
-      # HS384 签名密钥，长度必须 >= 48 字节
-      APP_JWT_SECRET: ${JWT_SECRET:?请在 .env 中设置 JWT_SECRET（>=48 字符）}
+      # 必填：HS384 签名密钥，长度必须 >= 48 字节（缺失则 compose 直接报错退出）
+      APP_JWT_SECRET: ${JWT_SECRET:?}
       # 上传目录（容器内绝对路径，已挂载数据卷）
       APP_FILE_UPLOAD_DIR: /app/upload
       # FISCO BCOS：默认 false = 不连链，上链模拟成功
