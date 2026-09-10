@@ -23,10 +23,14 @@ function Add-StepResult {
 
 function Invoke-Api {
     param([string]$Method, [string]$Path, $Body = $null, [switch]$Public)
-    $headers = @{ "Content-Type" = "application/json" }
+    # 必须声明 charset=utf-8 并以 UTF-8 字节发送，否则中文会被写成 ????
+    $headers = @{ "Content-Type" = "application/json; charset=utf-8" }
     if (-not $Public -and $token) { $headers["Authorization"] = "Bearer $token" }
     $params = @{ Method = $Method; Uri = "$BaseUrl$Path"; Headers = $headers }
-    if ($null -ne $Body) { $params.Body = ($Body | ConvertTo-Json -Depth 10) }
+    if ($null -ne $Body) {
+        $json = $Body | ConvertTo-Json -Depth 10
+        $params.Body = [System.Text.Encoding]::UTF8.GetBytes($json)
+    }
     $resp = Invoke-RestMethod @params
     if ($resp.code -ne 0) { throw "API 错误 $Method $Path : code=$($resp.code) message=$($resp.message)" }
     return $resp.data
