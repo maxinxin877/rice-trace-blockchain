@@ -1,2 +1,12 @@
 /mvnw text eol=lf
 *.cmd text eol=crlf
+
+# 部署关键文件强制 LF 换行：
+# CRLF 的 Dockerfile 续行符、.env 取值尾部的 \r 都会导致容器启动/连接失败
+Dockerfile text eol=lf
+docker-compose.yml text eol=lf
+.dockerignore text eol=lf
+.env.example text eol=lf
+docker/*.xml text eol=lf
+src/main/resources/application*.yml text eol=lf
+*.sh text eol=lf
