@@ -1,5 +1,6 @@
 package com.itheima.qukuailian.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.itheima.qukuailian.entity.RiceChainProof;
 
 import java.util.List;
@@ -33,4 +34,9 @@ public interface ChainProofService {
      * 阶段 7 接入真实 FISCO 后，currentHash 从 MySQL 业务数据重算、chainHash 从链上读取。
      */
     Map<String, Object> verify(String businessType, String businessId);
+
+    /**
+     * 分页查询链上存证列表（管理端"链上核验"列表）
+     */
+    IPage<RiceChainProof> page(long pageNo, long pageSize, String businessType, String businessId, String chainStatus);
 }

@@ -1,6 +1,8 @@
 package com.itheima.qukuailian.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.itheima.qukuailian.bcos.EvidenceContractService;
 import com.itheima.qukuailian.bcos.model.ChainTxResult;
 import com.itheima.qukuailian.common.ResultCode;
@@ -15,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -90,6 +93,17 @@ public class ChainProofServiceImpl implements ChainProofService {
                     "链上存证不存在: " + businessType + "/" + businessId);
         }
         return proof;
+    }
+
+    @Override
+    public IPage<RiceChainProof> page(long pageNo, long pageSize, String businessType, String businessId,
+                                      String chainStatus) {
+        LambdaQueryWrapper<RiceChainProof> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(StringUtils.hasText(businessType), RiceChainProof::getBusinessType, businessType)
+                .eq(StringUtils.hasText(businessId), RiceChainProof::getBusinessId, businessId)
+                .eq(StringUtils.hasText(chainStatus), RiceChainProof::getChainStatus, chainStatus)
+                .orderByDesc(RiceChainProof::getCreateTime);
+        return chainProofMapper.selectPage(new Page<>(pageNo, pageSize), wrapper);
     }
 
     @Override

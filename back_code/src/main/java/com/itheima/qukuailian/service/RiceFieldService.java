@@ -14,9 +14,9 @@ public interface RiceFieldService {
     /** 创建地块：校验编号唯一、GIS≥3点，计算坐标哈希并异步上链 */
     RiceField create(FieldCreateDTO dto, String ip);
 
-    /** 分页查询 */
+    /** 分页查询（支持 chainStatus 链上状态筛选） */
     IPage<RiceField> page(long pageNo, long pageSize, String fieldCode, String fieldName,
-                          String farmerName, String district);
+                          String farmerName, String district, String chainStatus);
 
     /** 详情：含基地照片、坐标哈希、链上交易 ID 与在种批次摘要 */
     RiceField detail(String fieldId);
@@ -26,4 +26,7 @@ public interface RiceFieldService {
 
     /** 绑定基地实景照片 */
     void bindPhotos(String fieldId, FieldPhotoBindDTO dto, String ip);
+
+    /** 删除地块（存在种植批次时拒绝删除） */
+    void delete(String fieldId, String ip);
 }

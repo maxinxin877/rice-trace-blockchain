@@ -4,9 +4,9 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.itheima.qukuailian.common.PageResult;
 import com.itheima.qukuailian.common.Result;
 import com.itheima.qukuailian.common.annotation.RequirePermission;
-import com.itheima.qukuailian.entity.RiceRiskWarning;
 import com.itheima.qukuailian.service.RiceTraceCodeService;
 import com.itheima.qukuailian.utils.PermissionConstants;
+import com.itheima.qukuailian.vo.ChannelWarningVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,15 +27,15 @@ public class RiceChannelWarningController {
     /** 查询窜货预警 */
     @GetMapping
     @RequirePermission(PermissionConstants.RICE_CHANNEL_WARNING_VIEW)
-    public Result<PageResult<RiceRiskWarning>> page(@RequestParam(defaultValue = "1") long pageNo,
-                                                    @RequestParam(defaultValue = "20") long pageSize,
-                                                    @RequestParam(required = false) String productBatchId,
-                                                    @RequestParam(required = false) String traceCode,
-                                                    @RequestParam(required = false) String riskLevel,
-                                                    @RequestParam(required = false) String region,
-                                                    @RequestParam(required = false) String startTime,
-                                                    @RequestParam(required = false) String endTime) {
-        IPage<RiceRiskWarning> result = traceCodeService.pageChannelWarnings(
+    public Result<PageResult<ChannelWarningVO>> page(@RequestParam(defaultValue = "1") long pageNo,
+                                                     @RequestParam(defaultValue = "20") long pageSize,
+                                                     @RequestParam(required = false) String productBatchId,
+                                                     @RequestParam(required = false) String traceCode,
+                                                     @RequestParam(required = false) String riskLevel,
+                                                     @RequestParam(required = false) String region,
+                                                     @RequestParam(required = false) String startTime,
+                                                     @RequestParam(required = false) String endTime) {
+        IPage<ChannelWarningVO> result = traceCodeService.pageChannelWarnings(
                 pageNo, pageSize, productBatchId, traceCode, riskLevel, region, startTime, endTime);
         return Result.success(PageResult.of(result));
     }

@@ -68,14 +68,19 @@ public final class PermissionConstants {
                     RICE_PLANTING_BATCH_CREATE, RICE_PLANTING_BATCH_VIEW, RICE_PLANTING_BATCH_UPDATE,
                     RICE_FARMING_LOG_CREATE, RICE_FARMING_LOG_VIEW,
                     RICE_ENV_RECORD_CREATE, RICE_ENV_RECORD_VIEW,
+                    RICE_DASHBOARD_VIEW,
                     RICE_CHAIN_PROOF_VIEW)),
             Map.entry("WAREHOUSE_KEEPER", Set.of(
                     RICE_STORAGE_CREATE, RICE_STORAGE_VIEW, RICE_STORAGE_QUALITY_CREATE,
-                    RICE_PLANTING_BATCH_VIEW, RICE_CHAIN_PROOF_VIEW)),
+                    RICE_FIELD_VIEW, RICE_PLANTING_BATCH_VIEW,
+                    RICE_DASHBOARD_VIEW,
+                    RICE_CHAIN_PROOF_VIEW)),
             Map.entry("PROCESSING_FACTORY", Set.of(
                     RICE_MILLING_CREATE, RICE_MILLING_VIEW, RICE_MILLING_UPDATE,
                     RICE_PRODUCT_BATCH_VIEW,
-                    RICE_STORAGE_VIEW, RICE_CHAIN_PROOF_VIEW)),
+                    RICE_STORAGE_VIEW,
+                    RICE_DASHBOARD_VIEW,
+                    RICE_CHAIN_PROOF_VIEW)),
             Map.entry("BRAND_OPERATOR", Set.of(
                     RICE_PRODUCT_BATCH_CREATE, RICE_PRODUCT_BATCH_VIEW,
                     RICE_TRACE_CODE_GENERATE, RICE_TRACE_CODE_ACTIVATE, RICE_TRACE_CODE_VIEW,

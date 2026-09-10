@@ -1,0 +1,28 @@
+真实模式下必定 404/400 的接口（7 处）
+农事记录路径错误 — farmingLog.ts:42,47 前端调 /rice/farming-logs，后端实际是嵌套路径 /rice/planting-batches/{plantingBatchId}/farming-logs（见 RiceFarmingLogController.java:19）。→ 农事记录列表、批次详情里的农事记录、新增农事记录全部 404。
+环境监测路径错误 — environmentRecord.ts:26 前端调 /rice/environment-records，后端实际是 /rice/planting-batches/{plantingBatchId}/environment-records。→ 环境监测列表 404。
+质检接口路径 + 请求体双错 — qualityTest.ts:48,53,58 前端 POST /rice/quality-tests，body 用 businessType/businessId/items；后端实际是 POST /rice/storage-receipts/{id}/quality-tests（RiceStorageReceiptController.java:60），body 字段是 testItems（不是 items），无 businessType/businessId。→ StorageList.vue:250 入库质检提交必 404。
+成品批次更新接口后端不存在 — productBatch.ts:59-71 getById（GET /product-batches/{id}）和 update（PUT /rice/product-batches/{id}）后端都没有 — RiceProductBatchController 只有 “新增 + 分页查询”。→ ProductList.vue:252 编辑成品批次保存 404。
+防伪码扫码记录接口不存在 — traceability.ts:89 前端调 GET /rice/trace-codes/{code}/scan-logs，RiceTraceCodeController 只有 generate /activate/ 分页查询三个接口。→ TraceCodeList.vue:175 "扫码记录" 弹窗 404。
+文件上传三处错误叠加 — FileUpload.vue:78,98
+action 写的是 /api/v1/files/upload，后端实际是 POST /api/v1/files（无 /upload 后缀）→ 404
+后端 bizType 是必填表单参数（FileController.java:37），el-upload 没传 :data → 400
+handleSuccess 判断 response.code === 200，但后端成功返回 code: 0（Result.java:25）→ 即使传成功了 fileId 也不回填 → FieldForm.vue:110 地块照片上传完全不可用。
+地块删除接口不存在 — field.ts:80 DELETE /rice/fields/{id} 后端没有对应方法（目前页面无删除按钮，属潜伏坏代码）。
+二、小程序端：真实模式下拿不到真实数据（4 处）
+扫码溯源永远返回 mock 数据 — traceability.ts:103-106 getTraceDetail () 没有 if (!USE_MOCK) 分支，任何模式都查 mock 表。数据库里真实的防伪码查询永远显示 “未查询到”，只有 mock 演示码 RC20260718000001 能出数据（而且是假数据当真数据展示）。后端也没有对应的溯源聚合接口。→ 影响 TraceIndex.vue 和 Certificates.vue:25。
+真伪鉴别永远走 mock 判定 — traceability.ts:108-122 verifyTraceCode () 同样无真实分支，纯前端 mock 逻辑跑在 mock 码表上。后端没有消费者验真接口。→ 影响 VerifyResult.vue:26。
+小程序链上核验会 401 — mini/ChainProof.vue:26-27 小程序 4 个页面路由都是 public: true（无 token），但后端 AuthInterceptor 拦截所有 /rice/**，无 token 直接抛 401。需要后端开放匿名查询接口。
+管理端 “链上核验” 列表也是 mock — traceability.ts:138-141 getChainProofs () 无真实分支，regulation/ChainProof.vue:48 列表显示的是 mock 存证记录（该页的 "搜索" 和 "核验" 按钮倒是真实接口）。
+三、参数不匹配导致功能失效（3 处）
+分页参数不一致 → 翻页失效 — useTable.ts:19 表格统一传 page，但后端统一收 pageNo（如 RiceFieldController.java:40）。field /plantingBatch/millingBatch /storageReceipt/productBatch /farmingLog/environmentRecord 七个模块的 realGetList 原样透传参数，后端收不到 pageNo，永远默认第 1 页 —— 点第 2 页显示的还是第 1 页。(traceability, regulation 两个模块有 pageParams () 做转换，不受影响。)
+地块 “链上状态” 筛选无效 — FieldList.vue:57 前端传 chainStatus，后端列表接口只支持 fieldCode /district/farmerName，该筛选条件被静默忽略。
+环境记录 “新增” 永远只写内存 mock — EnvironmentList.vue:190-206 submitForm 直接 mockEnvironmentRecords.unshift (...)，根本没调 API（environmentRecord 模块也没导出 create）。真实模式下提示 "添加成功"，刷新后数据消失。
+四、展示层小问题（4 处）
+地块详情照片真实模式下全部裂图 — FieldDetail.vue:222-230 getImageUrl 用 mockImageCache.get (fid)，真实模式缓存恒为空。应改用 /api/v1/files/{fileId}/download。
+成品批次 “溯源链路” 硬编码 — ProductList.vue:123-150 mockTraces 写死了 PROD20261001001 等 mock 批次的链路；真实批次点 "溯源" 全部走 generateDefaultTrace，除最后一节点外都显示 "暂无关联数据"。
+看板页脚接口路径文案过时 — DashboardContent.ts:51 写死 "数据来源: GET /rice/dashboard/summary"，实际路径是 /rice/regulation/dashboard/summary。
+401 不跳登录页 — request.ts:44-47 token 过期后只弹错误提示，注释里 "预留：跳转登录页" 没实现，用户会卡在当前页持续报错。
+✅ 已核对没问题的部分
+登录 / 登出、Dashboard 8 个统计卡片字段、防伪码生成 / 激活、监管四大接口（产量校验 / 风险预警 / 审计日志 / 看板）、窜货预警、Vite proxy 配置、角色映射（WAREHOUSE_KEEPER→WAREHOUSE 等）、.env.local 优先级 —— 全部与后端一致。
+总体判断：管理端的 "主干查询"(地块、种植批次、加工、入库、成品、防伪码列表、监管) 能通；但农事记录、环境监测、质检、文件上传、扫码记录、成品编辑这 6 条业务线在真实后端下是断的，小程序 4 个页面有 3 个半拿的是假数据或 401

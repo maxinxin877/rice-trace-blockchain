@@ -41,8 +41,10 @@ public class FileServiceImpl implements FileService {
         if (file == null || file.isEmpty()) {
             throw new BizException(ResultCode.PARAM_ERROR.getCode(), "上传文件不能为空");
         }
-        if (!ALLOWED_BIZ_TYPES.contains(bizType)) {
-            throw new BizException(ResultCode.PARAM_ERROR.getCode(), "不支持的文件业务类型: " + bizType);
+        // bizType 缺省为 FIELD_PHOTO，兼容前端未传该参数的情况
+        String effectiveBizType = StringUtils.hasText(bizType) ? bizType : "FIELD_PHOTO";
+        if (!ALLOWED_BIZ_TYPES.contains(effectiveBizType)) {
+            throw new BizException(ResultCode.PARAM_ERROR.getCode(), "不支持的文件业务类型: " + effectiveBizType);
         }
 
         // 1. 计算 SHA-256
@@ -86,7 +88,7 @@ public class FileServiceImpl implements FileService {
         resource.setFileUrl(urlPrefix + "/" + fileId + "/download");
         resource.setSha256(sha256);
         resource.setStorageType("LOCAL");
-        resource.setBizType(bizType);
+        resource.setBizType(effectiveBizType);
         resource.setBizId(bizId == null ? "" : bizId);
         fileResourceMapper.insert(resource);
         log.info("文件上传成功: fileId={}, name={}, sha256={}", fileId, resource.getFileName(), sha256);
