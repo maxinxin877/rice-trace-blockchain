@@ -22,8 +22,11 @@ public class FarmingLogCreateDTO {
     @NotNull(message = "操作时间不能为空")
     private LocalDateTime operationTime;
 
-    @NotBlank(message = "操作人ID不能为空")
+    /** 操作人ID：可不传，缺省取当前登录用户ID */
     private String operatorId;
+
+    /** 实际操作人姓名（如农户/工人）：可不传，缺省取当前登录用户名 */
+    private String operatorName;
 
     private String materialName;
 

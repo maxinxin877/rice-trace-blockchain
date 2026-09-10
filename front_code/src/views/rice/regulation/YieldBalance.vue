@@ -9,8 +9,22 @@
             <el-option label="按地块" value="FIELD" />
           </el-select>
         </el-form-item>
-        <el-form-item label="种植批次" v-if="form.scope === 'BATCH'">
-          <el-input v-model="form.batchId" placeholder="输入批次ID" style="width: 220px" />
+        <el-form-item label="入库单/原粮批次">
+          <!-- 后端产量校验依赖具体链路数据（grainBatchId/plantingBatchId），故改为下拉选择而不是手输 ID -->
+          <el-select
+            v-model="form.storageReceiptId"
+            filterable
+            placeholder="请选择入库单"
+            style="width: 340px"
+            :loading="loadingReceipts"
+          >
+            <el-option
+              v-for="r in receipts"
+              :key="r.storageReceiptId"
+              :label="r.grainBatchId + '（种植批次 ' + r.plantingBatchId + '）'"
+              :value="r.storageReceiptId"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="runCheck" :loading="checking">执行校验</el-button>
@@ -61,8 +75,11 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import PageContainer from '@/components/common/PageContainer.vue'
 import { regulationApi } from '@/api/modules/regulation'
+import { storageReceiptApi } from '@/api/modules/storageReceipt'
+import type { RiceStorageReceipt } from '@/types/storageReceipt'
 import type { YieldBalanceResult, YieldBalanceScope } from '@/types/regulation'
 
 interface CheckResult {
@@ -72,7 +89,27 @@ interface CheckResult {
 
 const checking = ref(false)
 const results = ref<CheckResult[]>([])
-const form = reactive({ scope: 'ALL', batchId: '' })
+const form = reactive({ scope: 'ALL', storageReceiptId: '' })
+
+// 校验对象：入库单列表（含 grainBatchId / plantingBatchId，正好满足后端校验所需参数）
+const receipts = ref<RiceStorageReceipt[]>([])
+const loadingReceipts = ref(false)
+
+async function loadReceipts() {
+  loadingReceipts.value = true
+  try {
+    const res = (await storageReceiptApi.getList({ page: 1, pageSize: 100 })) as unknown as {
+      data: { records: RiceStorageReceipt[] }
+    }
+    receipts.value = res.data.records || []
+    // 默认选中最近一条，避免默认状态点「执行校验」因缺少批次数据而报 42201
+    if (!form.storageReceiptId && receipts.value.length > 0) {
+      form.storageReceiptId = receipts.value[0].storageReceiptId
+    }
+  } finally {
+    loadingReceipts.value = false
+  }
+}
 
 const passRate = computed(() => {
   if (results.value.length === 0) return 0
@@ -101,15 +138,28 @@ async function loadResults() {
 }
 
 async function runCheck() {
+  const selected = receipts.value.find((r) => r.storageReceiptId === form.storageReceiptId)
+  if (!selected) {
+    ElMessage.warning('请先选择入库单（原粮批次）')
+    return
+  }
   checking.value = true
   try {
     const scopeMap: Record<string, YieldBalanceScope> = { ALL: 'FULL_CHAIN', BATCH: 'PLANTING_TO_STORAGE', FIELD: 'PLANTING_TO_STORAGE' }
-    await regulationApi.checkYieldBalance({ checkScope: scopeMap[form.scope] || 'FULL_CHAIN', plantingBatchId: form.batchId || undefined })
+    await regulationApi.checkYieldBalance({
+      checkScope: scopeMap[form.scope] || 'FULL_CHAIN',
+      grainBatchId: selected.grainBatchId,
+      plantingBatchId: selected.plantingBatchId,
+    })
     await loadResults()
+    ElMessage.success('校验完成')
   } finally {
     checking.value = false
   }
 }
 
-onMounted(loadResults)
+onMounted(() => {
+  loadResults()
+  loadReceipts()
+})
 </script>

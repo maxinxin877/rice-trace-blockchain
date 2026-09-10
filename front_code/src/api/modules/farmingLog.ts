@@ -27,10 +27,11 @@ async function mockCreate(dto: RiceFarmingLogCreateDTO): Promise<ApiResponse<Ric
   await mockDelay()
   const newLog: RiceFarmingLog = {
     ...dto,
+    operatorId: dto.operatorId || dto.operatorName,
     logId: mockId('FLOG'),
     tenantId: 'TENANT001',
     chainStatus: 'PENDING' as never,
-    createdBy: dto.operatorId,
+    createdBy: dto.operatorId || dto.operatorName,
     createdAt: new Date().toISOString(),
   }
   mockFarmingLogs.unshift(newLog)

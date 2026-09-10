@@ -63,8 +63,12 @@ public class RiceFarmingLogServiceImpl extends ServiceImpl<RiceFarmingLogMapper,
         BeanUtils.copyProperties(dto, logRecord);
         logRecord.setLogId(IdGen.generate("FLOG"));
         logRecord.setPlantingBatchId(plantingBatchId);
-        // 操作人：接口传入 operatorId，姓名取当前登录用户
-        logRecord.setOperatorName(UserContext.getUsername());
+        // 操作人：优先用接口传入的姓名/ID（干农活的人未必是录入人），未传时回退到当前登录用户
+        logRecord.setOperatorName(StringUtils.hasText(dto.getOperatorName())
+                ? dto.getOperatorName() : UserContext.getUsername());
+        if (!StringUtils.hasText(logRecord.getOperatorId())) {
+            logRecord.setOperatorId(String.valueOf(UserContext.getUserId()));
+        }
         // 记录摘要（参与上链）
         logRecord.setDataHash(computeDataHash(logRecord));
         logRecord.setChainStatus("PENDING");

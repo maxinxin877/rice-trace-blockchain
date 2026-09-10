@@ -28,7 +28,8 @@ export interface RiceFarmingLogCreateDTO {
   plantingBatchId: string
   operationType: FarmingOperationType
   operationTime: string
-  operatorId: string
+  // 不传时后端取当前登录用户；农事记录的实际操作人以 operatorName 为准
+  operatorId?: string
   operatorName: string
   materialName?: string
   materialBatchNo?: string
