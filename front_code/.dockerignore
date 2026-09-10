@@ -1,0 +1,11 @@
+# 构建上下文排除项（避免把本机 node_modules 打进镜像上下文，构建速度差 10 倍以上）
+node_modules
+dist
+dist-ssr
+.vscode
+.idea
+.git
+.gitignore
+*.log
+npm-debug.log*
+.DS_Store
