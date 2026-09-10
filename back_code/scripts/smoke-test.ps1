@@ -22,7 +22,7 @@ function Add-StepResult {
 }
 
 function Invoke-Api {
-    param([string]$Method, [string]$Path, $Body = $null, [bool]$Public = $false)
+    param([string]$Method, [string]$Path, $Body = $null, [switch]$Public)
     $headers = @{ "Content-Type" = "application/json" }
     if (-not $Public -and $token) { $headers["Authorization"] = "Bearer $token" }
     $params = @{ Method = $Method; Uri = "$BaseUrl$Path"; Headers = $headers }
@@ -237,7 +237,7 @@ try {
 
 # ---------- 15. 看板统计 ----------
 try {
-    $dash = Invoke-Api -Method "GET" -Path "/rice/dashboard/summary"
+    $dash = Invoke-Api -Method "GET" -Path "/rice/regulation/dashboard/summary"
     Add-StepResult "看板统计" $true "地块=$($dash.fieldCount), 批次=$($dash.plantingBatchCount), 防伪码=$($dash.traceCodeCount), 上链成功率=$($dash.chainSuccessRate)%"
 } catch { Add-StepResult "看板统计" $false $_.Exception.Message }
 
