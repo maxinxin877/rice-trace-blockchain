@@ -50,8 +50,8 @@ public class AuditLogServiceImpl implements AuditLogService {
                 .eq(StringUtils.hasText(businessId), RiceAuditLog::getBusinessId, businessId)
                 .eq(StringUtils.hasText(operatorId), RiceAuditLog::getOperatorId, operatorId)
                 .eq(StringUtils.hasText(operationType), RiceAuditLog::getOperationType, operationType)
-                .ge(StringUtils.hasText(startTime), RiceAuditLog::getOperationTime, LocalDateTime.parse(startTime))
-                .le(StringUtils.hasText(endTime), RiceAuditLog::getOperationTime, LocalDateTime.parse(endTime))
+                .ge(StringUtils.hasText(startTime), RiceAuditLog::getOperationTime, (org.springframework.util.StringUtils.hasText(startTime) ? java.time.LocalDateTime.parse(startTime) : null))
+                .le(StringUtils.hasText(endTime), RiceAuditLog::getOperationTime, (org.springframework.util.StringUtils.hasText(endTime) ? java.time.LocalDateTime.parse(endTime) : null))
                 .orderByDesc(RiceAuditLog::getOperationTime);
         return auditLogMapper.selectPage(new Page<>(pageNo, pageSize), wrapper);
     }

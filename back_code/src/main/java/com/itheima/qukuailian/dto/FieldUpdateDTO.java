@@ -24,6 +24,9 @@ public class FieldUpdateDTO {
     @NotBlank(message = "种植户ID不能为空")
     private String farmerId;
 
+    /** 种植户名称（前端会传；缺省时后端兜底为空串，避免 NOT NULL 列插入失败） */
+    private String farmerName;
+
     @NotBlank(message = "省不能为空")
     private String province;
 

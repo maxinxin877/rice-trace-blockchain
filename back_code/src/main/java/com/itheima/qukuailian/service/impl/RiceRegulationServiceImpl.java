@@ -134,8 +134,8 @@ public class RiceRegulationServiceImpl implements RiceRegulationService {
                 .eq(StringUtils.hasText(grainBatchId), RiceYieldBalance::getGrainBatchId, grainBatchId)
                 .eq(StringUtils.hasText(productBatchId), RiceYieldBalance::getProductBatchId, productBatchId)
                 .eq(StringUtils.hasText(result), RiceYieldBalance::getResult, result)
-                .ge(StringUtils.hasText(startTime), RiceYieldBalance::getCreateTime, LocalDateTime.parse(startTime))
-                .le(StringUtils.hasText(endTime), RiceYieldBalance::getCreateTime, LocalDateTime.parse(endTime))
+                .ge(StringUtils.hasText(startTime), RiceYieldBalance::getCreateTime, (org.springframework.util.StringUtils.hasText(startTime) ? java.time.LocalDateTime.parse(startTime) : null))
+                .le(StringUtils.hasText(endTime), RiceYieldBalance::getCreateTime, (org.springframework.util.StringUtils.hasText(endTime) ? java.time.LocalDateTime.parse(endTime) : null))
                 .orderByDesc(RiceYieldBalance::getCreateTime);
         return yieldBalanceMapper.selectPage(new Page<>(pageNo, pageSize), wrapper);
     }

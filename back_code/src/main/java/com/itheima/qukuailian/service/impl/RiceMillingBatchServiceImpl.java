@@ -98,8 +98,8 @@ public class RiceMillingBatchServiceImpl extends ServiceImpl<RiceMillingBatchMap
         wrapper.eq(StringUtils.hasText(grainBatchId), RiceMillingBatch::getGrainBatchId, grainBatchId)
                 .eq(StringUtils.hasText(productBatchId), RiceMillingBatch::getProductBatchId, productBatchId)
                 .eq(StringUtils.hasText(factoryId), RiceMillingBatch::getFactoryId, factoryId)
-                .ge(StringUtils.hasText(startTime), RiceMillingBatch::getProcessStartTime, LocalDateTime.parse(startTime))
-                .le(StringUtils.hasText(endTime), RiceMillingBatch::getProcessStartTime, LocalDateTime.parse(endTime))
+                .ge(StringUtils.hasText(startTime), RiceMillingBatch::getProcessStartTime, (org.springframework.util.StringUtils.hasText(startTime) ? java.time.LocalDateTime.parse(startTime) : null))
+                .le(StringUtils.hasText(endTime), RiceMillingBatch::getProcessStartTime, (org.springframework.util.StringUtils.hasText(endTime) ? java.time.LocalDateTime.parse(endTime) : null))
                 .orderByDesc(RiceMillingBatch::getCreateTime);
         return page(new Page<>(pageNo, pageSize), wrapper);
     }

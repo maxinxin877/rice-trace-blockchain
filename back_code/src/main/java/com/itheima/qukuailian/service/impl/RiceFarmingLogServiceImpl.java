@@ -84,8 +84,8 @@ public class RiceFarmingLogServiceImpl extends ServiceImpl<RiceFarmingLogMapper,
         LambdaQueryWrapper<RiceFarmingLog> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(RiceFarmingLog::getPlantingBatchId, plantingBatchId)
                 .eq(StringUtils.hasText(operationType), RiceFarmingLog::getOperationType, operationType)
-                .ge(StringUtils.hasText(startTime), RiceFarmingLog::getOperationTime, LocalDateTime.parse(startTime))
-                .le(StringUtils.hasText(endTime), RiceFarmingLog::getOperationTime, LocalDateTime.parse(endTime))
+                .ge(StringUtils.hasText(startTime), RiceFarmingLog::getOperationTime, (org.springframework.util.StringUtils.hasText(startTime) ? java.time.LocalDateTime.parse(startTime) : null))
+                .le(StringUtils.hasText(endTime), RiceFarmingLog::getOperationTime, (org.springframework.util.StringUtils.hasText(endTime) ? java.time.LocalDateTime.parse(endTime) : null))
                 .orderByDesc(RiceFarmingLog::getOperationTime);
         return page(new Page<>(pageNo, pageSize), wrapper);
     }

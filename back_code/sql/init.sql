@@ -37,7 +37,7 @@ CREATE TABLE rice_field (
     field_code         VARCHAR(50)     NOT NULL                COMMENT '地块编号(租户内唯一)',
     field_name         VARCHAR(100)    NOT NULL                COMMENT '地块名称',
     farmer_id          VARCHAR(32)     NOT NULL                COMMENT '种植户ID',
-    farmer_name        VARCHAR(50)     NOT NULL                COMMENT '种植户名称',
+    farmer_name        VARCHAR(50)     NOT NULL DEFAULT ''     COMMENT '种植户名称',
     province           VARCHAR(50)     NOT NULL                COMMENT '省',
     city               VARCHAR(50)     NOT NULL                COMMENT '市',
     district           VARCHAR(50)     NOT NULL                COMMENT '区县',

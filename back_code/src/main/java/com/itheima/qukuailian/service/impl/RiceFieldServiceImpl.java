@@ -55,6 +55,8 @@ public class RiceFieldServiceImpl extends ServiceImpl<RiceFieldMapper, RiceField
         RiceField field = new RiceField();
         BeanUtils.copyProperties(dto, field);
         field.setFieldId(IdGen.generate("FIELD"));
+        // farmer_name 为 NOT NULL 列：缺省时兜底空串，避免插入失败
+        field.setFarmerName(field.getFarmerName() == null ? "" : field.getFarmerName());
         // 3. 坐标哈希 = gisBoundary 的 SHA-256（JSON 规范化序列化）
         field.setCoordinateHash(HashUtils.sha256(toJson(dto.getGisBoundary())));
         field.setChainStatus("PENDING");

@@ -91,8 +91,8 @@ public class RiceStorageReceiptServiceImpl extends ServiceImpl<RiceStorageReceip
                 .eq(StringUtils.hasText(plantingBatchId), RiceStorageReceipt::getPlantingBatchId, plantingBatchId)
                 .eq(StringUtils.hasText(warehouseId), RiceStorageReceipt::getWarehouseId, warehouseId)
                 .eq(StringUtils.hasText(grainGrade), RiceStorageReceipt::getGrainGrade, grainGrade)
-                .ge(StringUtils.hasText(startTime), RiceStorageReceipt::getStorageTime, LocalDateTime.parse(startTime))
-                .le(StringUtils.hasText(endTime), RiceStorageReceipt::getStorageTime, LocalDateTime.parse(endTime))
+                .ge(StringUtils.hasText(startTime), RiceStorageReceipt::getStorageTime, (org.springframework.util.StringUtils.hasText(startTime) ? java.time.LocalDateTime.parse(startTime) : null))
+                .le(StringUtils.hasText(endTime), RiceStorageReceipt::getStorageTime, (org.springframework.util.StringUtils.hasText(endTime) ? java.time.LocalDateTime.parse(endTime) : null))
                 .orderByDesc(RiceStorageReceipt::getStorageTime);
         return page(new Page<>(pageNo, pageSize), wrapper);
     }
@@ -145,6 +145,8 @@ public class RiceStorageReceiptServiceImpl extends ServiceImpl<RiceStorageReceip
         for (QualityTestItemDTO itemDto : dto.getTestItems()) {
             RiceQualityTestItem item = new RiceQualityTestItem();
             BeanUtils.copyProperties(itemDto, item);
+            // DTO 字段名为 value，实体字段名为 itemValue，需显式映射
+            item.setItemValue(itemDto.getValue());
             item.setQualityTestId(test.getQualityTestId());
             items.add(item);
             qualityTestItemMapper.insert(item);

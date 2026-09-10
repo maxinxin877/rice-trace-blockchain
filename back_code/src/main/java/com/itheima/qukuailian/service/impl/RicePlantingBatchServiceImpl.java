@@ -87,8 +87,8 @@ public class RicePlantingBatchServiceImpl extends ServiceImpl<RicePlantingBatchM
         wrapper.eq(StringUtils.hasText(fieldId), RicePlantingBatch::getFieldId, fieldId)
                 .like(StringUtils.hasText(riceVariety), RicePlantingBatch::getRiceVariety, riceVariety)
                 .eq(StringUtils.hasText(status), RicePlantingBatch::getStatus, status)
-                .ge(StringUtils.hasText(sowingDateStart), RicePlantingBatch::getSowingDate, LocalDate.parse(sowingDateStart))
-                .le(StringUtils.hasText(sowingDateEnd), RicePlantingBatch::getSowingDate, LocalDate.parse(sowingDateEnd))
+                .ge(StringUtils.hasText(sowingDateStart), RicePlantingBatch::getSowingDate, (org.springframework.util.StringUtils.hasText(sowingDateStart) ? java.time.LocalDate.parse(sowingDateStart) : null))
+                .le(StringUtils.hasText(sowingDateEnd), RicePlantingBatch::getSowingDate, (org.springframework.util.StringUtils.hasText(sowingDateEnd) ? java.time.LocalDate.parse(sowingDateEnd) : null))
                 .orderByDesc(RicePlantingBatch::getCreateTime);
         return page(new Page<>(pageNo, pageSize), wrapper);
     }

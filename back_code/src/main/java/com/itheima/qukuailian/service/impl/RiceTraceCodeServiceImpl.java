@@ -176,8 +176,8 @@ public class RiceTraceCodeServiceImpl extends ServiceImpl<RiceTraceCodeMapper, R
         wrapper.in(RiceRiskWarning::getWarningType, CHANNEL_WARNING_TYPES)
                 .eq(StringUtils.hasText(traceCode), RiceRiskWarning::getBusinessId, traceCode)
                 .eq(StringUtils.hasText(riskLevel), RiceRiskWarning::getRiskLevel, riskLevel)
-                .ge(StringUtils.hasText(startTime), RiceRiskWarning::getCreateTime, LocalDateTime.parse(startTime))
-                .le(StringUtils.hasText(endTime), RiceRiskWarning::getCreateTime, LocalDateTime.parse(endTime))
+                .ge(StringUtils.hasText(startTime), RiceRiskWarning::getCreateTime, (org.springframework.util.StringUtils.hasText(startTime) ? java.time.LocalDateTime.parse(startTime) : null))
+                .le(StringUtils.hasText(endTime), RiceRiskWarning::getCreateTime, (org.springframework.util.StringUtils.hasText(endTime) ? java.time.LocalDateTime.parse(endTime) : null))
                 .orderByDesc(RiceRiskWarning::getCreateTime);
         IPage<RiceRiskWarning> warningPage = riskWarningMapper.selectPage(new Page<>(pageNo, pageSize), wrapper);
 

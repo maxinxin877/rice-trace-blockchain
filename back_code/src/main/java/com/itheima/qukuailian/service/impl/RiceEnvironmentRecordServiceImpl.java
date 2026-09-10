@@ -51,8 +51,8 @@ public class RiceEnvironmentRecordServiceImpl extends ServiceImpl<RiceEnvironmen
         LambdaQueryWrapper<RiceEnvironmentRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(RiceEnvironmentRecord::getPlantingBatchId, plantingBatchId)
                 .eq(StringUtils.hasText(sourceType), RiceEnvironmentRecord::getSourceType, sourceType)
-                .ge(StringUtils.hasText(startTime), RiceEnvironmentRecord::getRecordTime, LocalDateTime.parse(startTime))
-                .le(StringUtils.hasText(endTime), RiceEnvironmentRecord::getRecordTime, LocalDateTime.parse(endTime))
+                .ge(StringUtils.hasText(startTime), RiceEnvironmentRecord::getRecordTime, (org.springframework.util.StringUtils.hasText(startTime) ? java.time.LocalDateTime.parse(startTime) : null))
+                .le(StringUtils.hasText(endTime), RiceEnvironmentRecord::getRecordTime, (org.springframework.util.StringUtils.hasText(endTime) ? java.time.LocalDateTime.parse(endTime) : null))
                 .orderByDesc(RiceEnvironmentRecord::getRecordTime);
         return page(new Page<>(pageNo, pageSize), wrapper);
     }
