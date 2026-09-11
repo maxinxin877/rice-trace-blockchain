@@ -115,7 +115,7 @@
 
     <!-- 质检弹窗 -->
     <el-dialog v-model="showQuality" title="提交入库质检" width="700px">
-      <el-form ref="qualityFormRef" :model="qualityForm" label-width="110px">
+      <el-form ref="qualityFormRef" :model="qualityForm" :rules="qualityRules" label-width="110px">
         <el-form-item label="入库单ID">
           <el-input :model-value="currentStorageId" disabled />
         </el-form-item>
@@ -260,6 +260,10 @@ const showQuality = ref(false)
 const submittingQuality = ref(false)
 const currentStorageId = ref('')
 const qualityFormRef = ref<FormInstance>()
+const qualityRules = {
+  testAgency: [{ required: true, message: '请输入检测机构', trigger: 'blur' }],
+  testTime: [{ required: true, message: '请选择检测时间', trigger: 'change' }],
+}
 const qualityForm = ref<QualityFormData>({
   testAgency: '',
   testTime: '',
@@ -281,6 +285,18 @@ function openQuality(row: RiceStorageReceipt) {
 }
 
 async function submitQuality() {
+  // 后端 QualityTestSubmitDTO 要求 testAgency/testTime/testItems 必填，先在前端拦掉，避免直接抛 40001
+  const valid = await qualityFormRef.value?.validate().catch(() => false)
+  if (!valid) return
+  if (qualityForm.value.items.length === 0) {
+    ElMessage.warning('请至少添加一个检测项目')
+    return
+  }
+  const emptyIndex = qualityForm.value.items.findIndex((it) => !it.itemName || !it.itemName.trim())
+  if (emptyIndex >= 0) {
+    ElMessage.warning('第 ' + (emptyIndex + 1) + ' 个检测项目的名称不能为空')
+    return
+  }
   submittingQuality.value = true
   try {
     await qualityTestApi.create({

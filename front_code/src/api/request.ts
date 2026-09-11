@@ -60,7 +60,13 @@ instance.interceptors.response.use(
       switch (status) {
         case 401:
           ElMessage.error('登录已过期，请重新登录')
-          // 预留：跳转登录页
+          // 清除本地登录态并跳转登录页（已在登录页则不重复跳转）
+          localStorage.removeItem('token')
+          localStorage.removeItem('role')
+          localStorage.removeItem('userName')
+          if (!window.location.hash.startsWith('#/login')) {
+            window.location.hash = '#/login'
+          }
           break
         case 403:
           ElMessage.error('无权访问该资源')

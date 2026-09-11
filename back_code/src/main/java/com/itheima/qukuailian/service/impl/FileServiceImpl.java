@@ -17,6 +17,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Set;
 
 @Slf4j
@@ -41,8 +45,10 @@ public class FileServiceImpl implements FileService {
         if (file == null || file.isEmpty()) {
             throw new BizException(ResultCode.PARAM_ERROR.getCode(), "上传文件不能为空");
         }
-        if (!ALLOWED_BIZ_TYPES.contains(bizType)) {
-            throw new BizException(ResultCode.PARAM_ERROR.getCode(), "不支持的文件业务类型: " + bizType);
+        // bizType 缺省为 FIELD_PHOTO，兼容前端未传该参数的情况
+        String effectiveBizType = StringUtils.hasText(bizType) ? bizType : "FIELD_PHOTO";
+        if (!ALLOWED_BIZ_TYPES.contains(effectiveBizType)) {
+            throw new BizException(ResultCode.PARAM_ERROR.getCode(), "不支持的文件业务类型: " + effectiveBizType);
         }
 
         // 1. 计算 SHA-256
@@ -65,17 +71,11 @@ public class FileServiceImpl implements FileService {
         // 3. 落盘（uploadDir/{fileId}_{原始文件名}）
         String fileId = IdGen.generate("FILE");
         String safeName = sanitize(file.getOriginalFilename());
-        File dir = new File(uploadDir);
+        File dir = uploadDirPath();
         if (!dir.exists() && !dir.mkdirs()) {
-            throw new BizException(ResultCode.ERROR.getCode(), "文件目录创建失败");
+            throw new BizException(ResultCode.ERROR.getCode(), "文件目录创建失败: " + dir);
         }
-        File target = new File(dir, fileId + "_" + safeName);
-        try {
-            file.transferTo(target);
-        } catch (IOException e) {
-            log.error("保存文件失败: fileId={}", fileId, e);
-            throw new BizException(ResultCode.ERROR.getCode(), "文件保存失败");
-        }
+        saveToDisk(file, new File(dir, fileId + "_" + safeName), fileId);
 
         // 4. 入库
         FileResource resource = new FileResource();
@@ -86,7 +86,7 @@ public class FileServiceImpl implements FileService {
         resource.setFileUrl(urlPrefix + "/" + fileId + "/download");
         resource.setSha256(sha256);
         resource.setStorageType("LOCAL");
-        resource.setBizType(bizType);
+        resource.setBizType(effectiveBizType);
         resource.setBizId(bizId == null ? "" : bizId);
         fileResourceMapper.insert(resource);
         log.info("文件上传成功: fileId={}, name={}, sha256={}", fileId, resource.getFileName(), sha256);
@@ -105,11 +105,36 @@ public class FileServiceImpl implements FileService {
     @Override
     public File loadStoreFile(String fileId) {
         FileResource resource = getFile(fileId);
-        File file = new File(uploadDir, fileId + "_" + sanitize(resource.getFileName()));
+        File file = new File(uploadDirPath(), fileId + "_" + sanitize(resource.getFileName()));
         if (!file.exists()) {
             throw new BizException(ResultCode.NOT_FOUND.getCode(), "文件不存在: " + fileId);
         }
         return file;
+    }
+
+    /**
+     * 上传目录（统一转成绝对路径）。
+     * <p>注意：MultipartFile#transferTo 传入相对路径时，Servlet 容器会按自己的临时目录解析，
+     * 导致 "文件保存失败"，因此这里必须先转绝对路径。</p>
+     */
+    private File uploadDirPath() {
+        return Paths.get(uploadDir).toAbsolutePath().normalize().toFile();
+    }
+
+    /** 落盘：优先 transferTo，失败则退回到流拷贝（兼容各种容器实现） */
+    private void saveToDisk(MultipartFile file, File target, String fileId) {
+        try {
+            file.transferTo(target);
+            return;
+        } catch (IOException | IllegalStateException e) {
+            log.warn("transferTo 落盘失败，改用流拷贝: target={}", target, e);
+        }
+        try (InputStream in = file.getInputStream()) {
+            Files.copy(in, target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            log.error("保存文件失败: fileId={}", fileId, e);
+            throw new BizException(ResultCode.ERROR.getCode(), "文件保存失败");
+        }
     }
 
     /** 去除文件名中的路径分隔符等危险字符 */

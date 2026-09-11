@@ -46,14 +46,12 @@ public class AuditLogServiceImpl implements AuditLogService {
     public IPage<RiceAuditLog> page(long pageNo, long pageSize, String businessType, String businessId,
                                     String operatorId, String operationType, String startTime, String endTime) {
         LambdaQueryWrapper<RiceAuditLog> wrapper = new LambdaQueryWrapper<>();
-        LocalDateTime start = StringUtils.hasText(startTime) ? LocalDateTime.parse(startTime) : null;
-        LocalDateTime end = StringUtils.hasText(endTime) ? LocalDateTime.parse(endTime) : null;
         wrapper.eq(StringUtils.hasText(businessType), RiceAuditLog::getBusinessType, businessType)
                 .eq(StringUtils.hasText(businessId), RiceAuditLog::getBusinessId, businessId)
                 .eq(StringUtils.hasText(operatorId), RiceAuditLog::getOperatorId, operatorId)
                 .eq(StringUtils.hasText(operationType), RiceAuditLog::getOperationType, operationType)
-                .ge(start != null, RiceAuditLog::getOperationTime, start)
-                .le(end != null, RiceAuditLog::getOperationTime, end)
+                .ge(StringUtils.hasText(startTime), RiceAuditLog::getOperationTime, (org.springframework.util.StringUtils.hasText(startTime) ? java.time.LocalDateTime.parse(startTime) : null))
+                .le(StringUtils.hasText(endTime), RiceAuditLog::getOperationTime, (org.springframework.util.StringUtils.hasText(endTime) ? java.time.LocalDateTime.parse(endTime) : null))
                 .orderByDesc(RiceAuditLog::getOperationTime);
         return auditLogMapper.selectPage(new Page<>(pageNo, pageSize), wrapper);
     }

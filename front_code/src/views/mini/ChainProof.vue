@@ -23,8 +23,8 @@ import { traceabilityApi } from '@/api/modules/traceability'
 import type { ChainProofRecord } from '@/types/traceability'
 
 const route=useRoute(),code=String(route.query.code||'RC20260718000001'),proof=ref<ChainProofRecord|null>(null),loading=ref(false),verifying=ref(false)
-async function load(){loading.value=true;try{proof.value=(await traceabilityApi.getChainProof('TRACE_CODE',code)).data}finally{loading.value=false}}
-async function verify(){verifying.value=true;try{proof.value=(await traceabilityApi.verifyChainProof('TRACE_CODE',code)).data;proof.value?.verified?ElMessage.success('链上核验通过'):ElMessage.error('链上核验异常')}finally{verifying.value=false}}
+async function load(){loading.value=true;try{proof.value=(await traceabilityApi.getMiniChainProof(code)).data}finally{loading.value=false}}
+async function verify(){verifying.value=true;try{proof.value=(await traceabilityApi.reVerifyMiniChainProof(code)).data;proof.value?.verified?ElMessage.success('链上核验通过'):ElMessage.error('链上核验异常')}finally{verifying.value=false}}
 onMounted(load)
 </script>
 

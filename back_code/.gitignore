@@ -36,3 +36,7 @@ build/
 /bcos/
 frontend/dist/
 
+
+### 部署环境变量（含密码，禁止提交） ###
+.env
+.env.local

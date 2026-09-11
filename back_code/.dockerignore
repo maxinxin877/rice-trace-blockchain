@@ -1,0 +1,22 @@
+# 构建上下文排除项（只保留构建所需内容，缩小上下文、加速构建）
+target/
+.idea/
+*.iml
+*.iws
+*.ipr
+.git/
+.gitignore
+.vscode/
+HELP.md
+reference/
+docs/
+scripts/
+sql/
+nginx/
+frontend/
+bcos/
+*.log
+mvnw
+mvnw.cmd
+.env
+.env.local

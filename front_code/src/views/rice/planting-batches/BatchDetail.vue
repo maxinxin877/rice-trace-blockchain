@@ -195,7 +195,6 @@ async function submitFarmingLog() {
       plantingBatchId: batchId,
       operationType: farmingForm.operationType as never,
       operationTime: farmingForm.operationTime,
-      operatorId: 'FARMER001',
       operatorName: farmingForm.operatorName,
       materialName: farmingForm.materialName || undefined,
       materialDosage: farmingForm.materialDosage,

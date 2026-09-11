@@ -1,0 +1,51 @@
+# =====================================================================
+# 生产/容器环境配置（docker compose 通过 SPRING_PROFILES_ACTIVE=prod 启用）
+# 所有敏感项与连接信息均可用环境变量覆盖，见 docker-compose.yml / .env.example
+# 说明：本文件只覆盖需要变化的部分，其余配置继承 application.yml
+# =====================================================================
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://mysql:3306/qukuailian?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 10000
+      max-lifetime: 1800000
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:redis}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      database: 0
+      timeout: 5s
+
+# 生产环境关闭 SQL 打印，避免日志刷屏
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+app:
+  jwt:
+    # HS384 要求密钥长度 >= 48 字节，请在 .env 中设置 JWT_SECRET（可用 openssl rand -base64 48 生成）
+    secret: ${APP_JWT_SECRET:qukuailian-rice-trace-secret-key-2026-0123456789abcdef}
+    expire-seconds: ${JWT_EXPIRE_SECONDS:43200}
+  file:
+    # 容器内为绝对路径，配合 docker-compose 的数据卷持久化
+    upload-dir: ${APP_FILE_UPLOAD_DIR:/app/upload}
+    url-prefix: /api/v1/files
+
+bcos:
+  # false = 不连链，上链动作模拟成功（演示/答辩推荐）
+  # true  = 接入真实 FISCO BCOS，需先按 docs/FISCO_BCOS搭建指南.md 搭链并部署 Evidence 合约
+  enabled: ${BCOS_ENABLED:false}
+  group-id: 0
+  config-file: ${BCOS_CONFIG_FILE:bcos/config.toml}
+  contract-address: ${BCOS_CONTRACT_ADDRESS:}
+
+logging:
+  level:
+    root: info
+    com.itheima.qukuailian: info
+    org.fisco.bcos: info

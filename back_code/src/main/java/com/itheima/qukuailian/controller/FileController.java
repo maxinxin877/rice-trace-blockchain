@@ -20,9 +20,11 @@ import java.nio.charset.StandardCharsets;
  * 通用文件接口（接口文档 v1.1 §8，需登录）
  * <ul>
  *   <li>POST /api/v1/files —— 上传（multipart/form-data: file + bizType [+ bizId]）</li>
+ *   <li>POST /api/v1/files/upload —— 同上（兼容前端 action 写法）</li>
  *   <li>GET  /api/v1/files/{fileId} —— 元数据</li>
  *   <li>GET  /api/v1/files/{fileId}/download —— 下载</li>
  * </ul>
+ * <p>bizType 缺省为 FIELD_PHOTO，避免前端未传时报 400。</p>
  */
 @RestController
 @RequestMapping("/files")
@@ -34,8 +36,16 @@ public class FileController {
     /** 上传文件 */
     @PostMapping
     public Result<FileResource> upload(@RequestParam("file") MultipartFile file,
-                                       @RequestParam("bizType") String bizType,
+                                       @RequestParam(value = "bizType", required = false) String bizType,
                                        @RequestParam(value = "bizId", required = false) String bizId) {
+        return Result.success(fileService.upload(file, bizType, bizId));
+    }
+
+    /** 上传文件（兼容 /files/upload 路径） */
+    @PostMapping("/upload")
+    public Result<FileResource> uploadAlias(@RequestParam("file") MultipartFile file,
+                                            @RequestParam(value = "bizType", required = false) String bizType,
+                                            @RequestParam(value = "bizId", required = false) String bizId) {
         return Result.success(fileService.upload(file, bizType, bizId));
     }
 

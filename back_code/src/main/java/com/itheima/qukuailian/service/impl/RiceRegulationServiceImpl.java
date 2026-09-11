@@ -129,15 +129,13 @@ public class RiceRegulationServiceImpl implements RiceRegulationService {
                                                            String productBatchId, String result,
                                                            String startTime, String endTime) {
         LambdaQueryWrapper<RiceYieldBalance> wrapper = new LambdaQueryWrapper<>();
-        LocalDateTime start = StringUtils.hasText(startTime) ? LocalDateTime.parse(startTime) : null;
-        LocalDateTime end = StringUtils.hasText(endTime) ? LocalDateTime.parse(endTime) : null;
         wrapper.eq(StringUtils.hasText(checkId), RiceYieldBalance::getCheckId, checkId)
                 .eq(StringUtils.hasText(plantingBatchId), RiceYieldBalance::getPlantingBatchId, plantingBatchId)
                 .eq(StringUtils.hasText(grainBatchId), RiceYieldBalance::getGrainBatchId, grainBatchId)
                 .eq(StringUtils.hasText(productBatchId), RiceYieldBalance::getProductBatchId, productBatchId)
                 .eq(StringUtils.hasText(result), RiceYieldBalance::getResult, result)
-                .ge(start != null, RiceYieldBalance::getCreateTime, start)
-                .le(end != null, RiceYieldBalance::getCreateTime, end)
+                .ge(StringUtils.hasText(startTime), RiceYieldBalance::getCreateTime, (org.springframework.util.StringUtils.hasText(startTime) ? java.time.LocalDateTime.parse(startTime) : null))
+                .le(StringUtils.hasText(endTime), RiceYieldBalance::getCreateTime, (org.springframework.util.StringUtils.hasText(endTime) ? java.time.LocalDateTime.parse(endTime) : null))
                 .orderByDesc(RiceYieldBalance::getCreateTime);
         return yieldBalanceMapper.selectPage(new Page<>(pageNo, pageSize), wrapper);
     }

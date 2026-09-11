@@ -1,6 +1,7 @@
 package com.itheima.qukuailian.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.itheima.qukuailian.common.PageQuery;
 import com.itheima.qukuailian.common.PageResult;
 import com.itheima.qukuailian.common.Result;
 import com.itheima.qukuailian.common.annotation.RequirePermission;
@@ -19,6 +20,7 @@ import java.util.Map;
 
 /**
  * 地块档案接口（接口文档 v1.1 §5.1-§5.5）
+ * <p>分页参数同时兼容 pageNo（文档规范）与 page（前端常用写法）。</p>
  */
 @RestController
 @RequestMapping("/rice/fields")
@@ -34,16 +36,17 @@ public class RiceFieldController {
         return Result.success(riceFieldService.create(dto, request.getRemoteAddr()));
     }
 
-    /** 分页查询地块 */
+    /** 分页查询地块（支持 chainStatus 链上状态筛选） */
     @GetMapping
     @RequirePermission(PermissionConstants.RICE_FIELD_VIEW)
-    public Result<PageResult<RiceField>> page(@RequestParam(defaultValue = "1") long pageNo,
-                                              @RequestParam(defaultValue = "20") long pageSize,
+    public Result<PageResult<RiceField>> page(PageQuery pageQuery,
                                               @RequestParam(required = false) String fieldCode,
                                               @RequestParam(required = false) String fieldName,
                                               @RequestParam(required = false) String farmerName,
-                                              @RequestParam(required = false) String district) {
-        IPage<RiceField> result = riceFieldService.page(pageNo, pageSize, fieldCode, fieldName, farmerName, district);
+                                              @RequestParam(required = false) String district,
+                                              @RequestParam(required = false) String chainStatus) {
+        IPage<RiceField> result = riceFieldService.page(pageQuery.resolvePageNo(), pageQuery.resolvePageSize(),
+                fieldCode, fieldName, farmerName, district, chainStatus);
         return Result.success(PageResult.of(result));
     }
 
@@ -71,5 +74,13 @@ public class RiceFieldController {
                                                   HttpServletRequest request) {
         riceFieldService.bindPhotos(fieldId, dto, request.getRemoteAddr());
         return Result.success(Map.of("fieldId", fieldId, "basePhotoFileIds", dto.getFileIds()));
+    }
+
+    /** 删除地块（存在种植批次时不允许删除） */
+    @DeleteMapping("/{fieldId}")
+    @RequirePermission(PermissionConstants.RICE_FIELD_UPDATE)
+    public Result<Void> delete(@PathVariable String fieldId, HttpServletRequest request) {
+        riceFieldService.delete(fieldId, request.getRemoteAddr());
+        return Result.success();
     }
 }

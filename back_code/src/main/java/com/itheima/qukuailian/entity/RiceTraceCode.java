@@ -1,6 +1,7 @@
 package com.itheima.qukuailian.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -60,4 +61,8 @@ public class RiceTraceCode {
 
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+
+    /** 产品名称（非表字段，列表查询时填充，供前端展示） */
+    @TableField(exist = false)
+    private String productName;
 }

@@ -102,7 +102,7 @@
         <FileUpload v-model="form.basePhotoFileIds" accept=".jpg,.jpeg,.png,.webp" :limit="9" tip="支持 jpg/png/webp，每张不超过10MB" />
       </el-form-item>
 
-      <el-form-item v-if="isEdit" label="修改原因">
+      <el-form-item v-if="isEdit" label="修改原因" prop="reason">
         <el-input v-model="form.reason" type="textarea" :rows="2" placeholder="请输入修改原因（审计需要）" />
       </el-form-item>
 
@@ -175,6 +175,8 @@ const rules: FormRules = {
   district: [{ required: true, message: '请输入区/县', trigger: 'blur' }],
   address: [{ required: true, message: '请输入详细地址', trigger: 'blur' }],
   areaMu: [{ required: true, message: '请输入地块面积', trigger: 'blur' }],
+  // 编辑态才渲染该字段，创建态不会参与校验
+  reason: [{ required: true, message: '请输入修改原因', trigger: 'blur' }],
 }
 
 const submitting = ref(false)
@@ -235,6 +237,7 @@ async function handleSubmit() {
     if (isEdit.value) {
       await fieldApi.update({
         fieldId: form.fieldId!,
+        fieldCode: form.fieldCode,
         fieldName: form.fieldName,
         farmerId: form.farmerId,
         farmerName: form.farmerName,

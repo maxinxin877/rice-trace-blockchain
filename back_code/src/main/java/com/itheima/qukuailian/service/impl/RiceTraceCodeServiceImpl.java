@@ -22,6 +22,7 @@ import com.itheima.qukuailian.service.ChainProofService;
 import com.itheima.qukuailian.service.RiceTraceCodeService;
 import com.itheima.qukuailian.utils.HashUtils;
 import com.itheima.qukuailian.utils.IdGen;
+import com.itheima.qukuailian.vo.ChannelWarningVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -150,23 +151,64 @@ public class RiceTraceCodeServiceImpl extends ServiceImpl<RiceTraceCodeMapper, R
                 .eq(StringUtils.hasText(status), RiceTraceCode::getStatus, status)
                 .eq(StringUtils.hasText(riskLevel), RiceTraceCode::getRiskLevel, riskLevel)
                 .orderByDesc(RiceTraceCode::getCreateTime);
-        return page(new Page<>(pageNo, pageSize), wrapper);
+        IPage<RiceTraceCode> result = page(new Page<>(pageNo, pageSize), wrapper);
+        // 补充产品名称（前端防伪码列表展示"产品名称"列）
+        Map<String, String> productNameCache = new HashMap<>();
+        for (RiceTraceCode code : result.getRecords()) {
+            String batchId = code.getProductBatchId();
+            if (batchId == null || batchId.isEmpty()) {
+                continue;
+            }
+            String name = productNameCache.computeIfAbsent(batchId, id -> {
+                RiceProductBatch batch = productBatchMapper.selectById(id);
+                return batch == null ? "" : batch.getProductName();
+            });
+            code.setProductName(name);
+        }
+        return result;
     }
 
     @Override
-    public IPage<RiceRiskWarning> pageChannelWarnings(long pageNo, long pageSize, String productBatchId,
-                                                      String traceCode, String riskLevel, String region,
-                                                      String startTime, String endTime) {
+    public IPage<ChannelWarningVO> pageChannelWarnings(long pageNo, long pageSize, String productBatchId,
+                                                       String traceCode, String riskLevel, String region,
+                                                       String startTime, String endTime) {
         LambdaQueryWrapper<RiceRiskWarning> wrapper = new LambdaQueryWrapper<>();
-        LocalDateTime start = StringUtils.hasText(startTime) ? LocalDateTime.parse(startTime) : null;
-        LocalDateTime end = StringUtils.hasText(endTime) ? LocalDateTime.parse(endTime) : null;
         wrapper.in(RiceRiskWarning::getWarningType, CHANNEL_WARNING_TYPES)
                 .eq(StringUtils.hasText(traceCode), RiceRiskWarning::getBusinessId, traceCode)
                 .eq(StringUtils.hasText(riskLevel), RiceRiskWarning::getRiskLevel, riskLevel)
-                .ge(start != null, RiceRiskWarning::getCreateTime, start)
-                .le(end != null, RiceRiskWarning::getCreateTime, end)
+                .ge(StringUtils.hasText(startTime), RiceRiskWarning::getCreateTime, (org.springframework.util.StringUtils.hasText(startTime) ? java.time.LocalDateTime.parse(startTime) : null))
+                .le(StringUtils.hasText(endTime), RiceRiskWarning::getCreateTime, (org.springframework.util.StringUtils.hasText(endTime) ? java.time.LocalDateTime.parse(endTime) : null))
                 .orderByDesc(RiceRiskWarning::getCreateTime);
-        return riskWarningMapper.selectPage(new Page<>(pageNo, pageSize), wrapper);
+        IPage<RiceRiskWarning> warningPage = riskWarningMapper.selectPage(new Page<>(pageNo, pageSize), wrapper);
+
+        // 组装前端页面所需字段：防伪码 / 产品名称 / 预期与实际扫码区域 / 扫码次数
+        List<ChannelWarningVO> records = new ArrayList<>();
+        for (RiceRiskWarning warning : warningPage.getRecords()) {
+            ChannelWarningVO vo = new ChannelWarningVO();
+            vo.setWarningId(warning.getWarningId());
+            vo.setRiskLevel(warning.getRiskLevel());
+            vo.setHandled(warning.getHandled());
+            vo.setWarningTime(warning.getCreateTime());
+            vo.setWarningContent(warning.getWarningContent());
+
+            String code = "TRACE_CODE".equals(warning.getBusinessType()) ? warning.getBusinessId() : "";
+            vo.setTraceCode(code);
+            if (!code.isEmpty()) {
+                RiceTraceCode traceCodeEntity = lambdaQuery().eq(RiceTraceCode::getTraceCode, code).one();
+                if (traceCodeEntity != null) {
+                    vo.setScanCount(traceCodeEntity.getScanCount());
+                    vo.setExpectedRegion(traceCodeEntity.getExpectedSaleRegion());
+                    vo.setActualRegion(traceCodeEntity.getLastScanRegion());
+                    RiceProductBatch batch = productBatchMapper.selectById(traceCodeEntity.getProductBatchId());
+                    vo.setProductName(batch == null ? "" : batch.getProductName());
+                }
+            }
+            records.add(vo);
+        }
+        Page<ChannelWarningVO> converted = new Page<>(warningPage.getCurrent(), warningPage.getSize(),
+                warningPage.getTotal());
+        converted.setRecords(records);
+        return converted;
     }
 
     /** 构造防伪码列表：RC + 日期 + 8 位序号，二维码内容指向小程序溯源页 */

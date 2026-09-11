@@ -40,6 +40,7 @@ export const QUALITY_RESULT_MAP: Record<string, { label: string; color: string }
 export const TRACE_CODE_STATUS_MAP: Record<string, { label: string; color: string }> = {
   [TraceCodeStatus.GENERATED]: { label: '已生成', color: '#909399' },
   [TraceCodeStatus.ACTIVATED]: { label: '已激活', color: '#67C23A' },
+  [TraceCodeStatus.DISABLED]: { label: '已停用', color: '#F56C6C' },
   [TraceCodeStatus.DEACTIVATED]: { label: '已停用', color: '#F56C6C' },
   [TraceCodeStatus.RISK]: { label: '风险', color: '#E6A23C' },
 }

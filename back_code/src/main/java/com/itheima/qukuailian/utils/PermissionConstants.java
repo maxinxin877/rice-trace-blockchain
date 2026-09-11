@@ -49,7 +49,13 @@ public final class PermissionConstants {
     public static final String RICE_CHAIN_PROOF_VIEW = "RICE_CHAIN_PROOF_VIEW";
     public static final String RICE_CHAIN_PROOF_VERIFY = "RICE_CHAIN_PROOF_VERIFY";
 
-    /** 角色 -> 权限码集合 */
+    /**
+     * 角色 -> 权限码集合
+     * <p><b>维护约定：本表必须与前端 {@code front_code/src/stores/user.ts} 的 ROLE_PERMISSIONS
+     * 以及菜单定义（router/index.ts、layouts/MainLayout.vue）保持一致。</b>
+     * 修改后请执行 {@code back_code/scripts/check-permission-parity.ps1} 校验，避免出现
+     * "菜单可见但接口 40301" 或"接口可写但界面无入口"的不一致。</p>
+     */
     private static final Map<String, Set<String>> ROLE_PERMISSIONS = Map.ofEntries(
             Map.entry("RICE_ADMIN", Set.of(
                     RICE_FIELD_CREATE, RICE_FIELD_VIEW, RICE_FIELD_UPDATE,
@@ -68,18 +74,20 @@ public final class PermissionConstants {
                     RICE_PLANTING_BATCH_CREATE, RICE_PLANTING_BATCH_VIEW, RICE_PLANTING_BATCH_UPDATE,
                     RICE_FARMING_LOG_CREATE, RICE_FARMING_LOG_VIEW,
                     RICE_ENV_RECORD_CREATE, RICE_ENV_RECORD_VIEW,
-                    RICE_CHAIN_PROOF_VIEW)),
+                    RICE_DASHBOARD_VIEW)),
             Map.entry("WAREHOUSE_KEEPER", Set.of(
                     RICE_STORAGE_CREATE, RICE_STORAGE_VIEW, RICE_STORAGE_QUALITY_CREATE,
-                    RICE_PLANTING_BATCH_VIEW, RICE_CHAIN_PROOF_VIEW)),
+                    RICE_FIELD_VIEW, RICE_PLANTING_BATCH_VIEW,
+                    RICE_DASHBOARD_VIEW)),
             Map.entry("PROCESSING_FACTORY", Set.of(
                     RICE_MILLING_CREATE, RICE_MILLING_VIEW, RICE_MILLING_UPDATE,
                     RICE_PRODUCT_BATCH_VIEW,
-                    RICE_STORAGE_VIEW, RICE_CHAIN_PROOF_VIEW)),
+                    RICE_STORAGE_VIEW,
+                    RICE_DASHBOARD_VIEW)),
             Map.entry("BRAND_OPERATOR", Set.of(
                     RICE_PRODUCT_BATCH_CREATE, RICE_PRODUCT_BATCH_VIEW,
                     RICE_TRACE_CODE_GENERATE, RICE_TRACE_CODE_ACTIVATE, RICE_TRACE_CODE_VIEW,
-                    RICE_CHANNEL_WARNING_VIEW, RICE_DASHBOARD_VIEW, RICE_CHAIN_PROOF_VIEW)),
+                    RICE_CHANNEL_WARNING_VIEW, RICE_DASHBOARD_VIEW)),
             Map.entry("REGULATOR", Set.of(
                     RICE_FIELD_VIEW, RICE_PLANTING_BATCH_VIEW, RICE_FARMING_LOG_VIEW, RICE_ENV_RECORD_VIEW,
                     RICE_STORAGE_VIEW, RICE_MILLING_VIEW, RICE_PRODUCT_BATCH_VIEW,

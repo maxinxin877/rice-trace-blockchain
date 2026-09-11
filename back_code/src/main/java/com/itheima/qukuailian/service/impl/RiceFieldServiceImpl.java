@@ -55,6 +55,8 @@ public class RiceFieldServiceImpl extends ServiceImpl<RiceFieldMapper, RiceField
         RiceField field = new RiceField();
         BeanUtils.copyProperties(dto, field);
         field.setFieldId(IdGen.generate("FIELD"));
+        // farmer_name 为 NOT NULL 列：缺省时兜底空串，避免插入失败
+        field.setFarmerName(field.getFarmerName() == null ? "" : field.getFarmerName());
         // 3. 坐标哈希 = gisBoundary 的 SHA-256（JSON 规范化序列化）
         field.setCoordinateHash(HashUtils.sha256(toJson(dto.getGisBoundary())));
         field.setChainStatus("PENDING");
@@ -70,12 +72,13 @@ public class RiceFieldServiceImpl extends ServiceImpl<RiceFieldMapper, RiceField
 
     @Override
     public IPage<RiceField> page(long pageNo, long pageSize, String fieldCode, String fieldName,
-                                 String farmerName, String district) {
+                                 String farmerName, String district, String chainStatus) {
         LambdaQueryWrapper<RiceField> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(StringUtils.hasText(fieldCode), RiceField::getFieldCode, fieldCode)
                 .like(StringUtils.hasText(fieldName), RiceField::getFieldName, fieldName)
                 .like(StringUtils.hasText(farmerName), RiceField::getFarmerName, farmerName)
                 .eq(StringUtils.hasText(district), RiceField::getDistrict, district)
+                .eq(StringUtils.hasText(chainStatus), RiceField::getChainStatus, chainStatus)
                 .orderByDesc(RiceField::getCreateTime);
         return page(new Page<>(pageNo, pageSize), wrapper);
     }
@@ -136,6 +139,25 @@ public class RiceFieldServiceImpl extends ServiceImpl<RiceFieldMapper, RiceField
         updateById(field);
         auditLogService.record("FIELD", fieldId, "UPDATE", null, null, dto.getReason(), ip);
         log.info("地块照片绑定成功: fieldId={}, count={}", fieldId, dto.getFileIds().size());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void delete(String fieldId, String ip) {
+        RiceField field = getById(fieldId);
+        if (field == null) {
+            throw new BizException(ResultCode.NOT_FOUND.getCode(), "地块不存在: " + fieldId);
+        }
+        // 存在种植批次时不允许删除，避免链路数据孤立
+        long batchCount = plantingBatchMapper.selectCount(new LambdaQueryWrapper<RicePlantingBatch>()
+                .eq(RicePlantingBatch::getFieldId, fieldId));
+        if (batchCount > 0) {
+            throw new BizException(ResultCode.CONFLICT.getCode(),
+                    "该地块下存在 " + batchCount + " 个种植批次，不允许删除");
+        }
+        removeById(fieldId);
+        auditLogService.record("FIELD", fieldId, "DELETE", field.getCoordinateHash(), null, "删除地块", ip);
+        log.info("地块删除成功: fieldId={}", fieldId);
     }
 
     private String toJson(Object obj) {

@@ -222,7 +222,6 @@ async function submitForm() {
       plantingBatchId: selectedBatch.value!.plantingBatchId,
       operationType: form.operationType as never,
       operationTime: form.operationTime,
-      operatorId: 'FARMER001',
       operatorName: form.operatorName,
       materialName: form.materialName || undefined,
       materialDosage: form.materialDosage,

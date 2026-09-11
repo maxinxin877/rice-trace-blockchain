@@ -26,9 +26,7 @@
     <el-dialog v-model="showForm" title="新增成品批次" width="700px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="成品批次ID" prop="productBatchId">
-          <el-select v-model="form.productBatchId" placeholder="请选择加工时创建的成品批次ID" filterable style="width: 100%">
-            <el-option v-for="pid in millingProductIds" :key="pid" :label="pid" :value="pid" />
-          </el-select>
+          <el-input v-model="form.productBatchId" placeholder="请输入成品批次ID，如 PB20260911001" />
         </el-form-item>
         <el-row :gutter="20">
           <el-col :span="12">
@@ -108,7 +106,6 @@ import DataTable from '@/components/common/DataTable.vue'
 import type { TableColumn } from '@/components/common/DataTable.vue'
 import NutritionEditor from '@/components/rice/NutritionEditor.vue'
 import { productBatchApi } from '@/api/modules/productBatch'
-import { millingBatchApi } from '@/api/modules/millingBatch'
 import { useTable } from '@/composables/useTable'
 import type { RiceProductBatch, NutritionFacts, TraceResult } from '@/types/productBatch'
 
@@ -204,15 +201,8 @@ const fetchFn = (params: Record<string, unknown>) =>
 
 const { loading, data, total, page, pageSize, loadData, onSearch, onReset, onPageChange } = useTable<RiceProductBatch>(fetchFn)
 
-// 碾米加工中已定义的成品批次ID（下拉选项）
-const millingProductIds = ref<string[]>([])
-
-onMounted(async () => {
+onMounted(() => {
   loadData()
-  const res = await millingBatchApi.getList({ pageSize: 100 })
-  if (res.code === 200) {
-    millingProductIds.value = [...new Set(res.data.records.map((m) => m.productBatchId).filter(Boolean))]
-  }
 })
 
 // 表单

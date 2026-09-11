@@ -6,7 +6,7 @@ export interface TraceCodeRecord {
   riceVariety: string
   packageSpec: string
   expectedSaleRegion: string
-  status: 'GENERATED' | 'ACTIVATED' | 'DEACTIVATED' | 'RISK'
+  status: 'GENERATED' | 'ACTIVATED' | 'DISABLED' | 'DEACTIVATED' | 'RISK'
   scanCount: number
   firstScannedAt: string | null
   lastScannedAt: string | null

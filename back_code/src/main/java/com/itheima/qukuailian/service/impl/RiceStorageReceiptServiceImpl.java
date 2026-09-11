@@ -87,14 +87,12 @@ public class RiceStorageReceiptServiceImpl extends ServiceImpl<RiceStorageReceip
     public IPage<RiceStorageReceipt> page(long pageNo, long pageSize, String grainBatchId, String plantingBatchId,
                                           String warehouseId, String grainGrade, String startTime, String endTime) {
         LambdaQueryWrapper<RiceStorageReceipt> wrapper = new LambdaQueryWrapper<>();
-        LocalDateTime start = StringUtils.hasText(startTime) ? LocalDateTime.parse(startTime) : null;
-        LocalDateTime end = StringUtils.hasText(endTime) ? LocalDateTime.parse(endTime) : null;
         wrapper.eq(StringUtils.hasText(grainBatchId), RiceStorageReceipt::getGrainBatchId, grainBatchId)
                 .eq(StringUtils.hasText(plantingBatchId), RiceStorageReceipt::getPlantingBatchId, plantingBatchId)
                 .eq(StringUtils.hasText(warehouseId), RiceStorageReceipt::getWarehouseId, warehouseId)
                 .eq(StringUtils.hasText(grainGrade), RiceStorageReceipt::getGrainGrade, grainGrade)
-                .ge(start != null, RiceStorageReceipt::getStorageTime, start)
-                .le(end != null, RiceStorageReceipt::getStorageTime, end)
+                .ge(StringUtils.hasText(startTime), RiceStorageReceipt::getStorageTime, (org.springframework.util.StringUtils.hasText(startTime) ? java.time.LocalDateTime.parse(startTime) : null))
+                .le(StringUtils.hasText(endTime), RiceStorageReceipt::getStorageTime, (org.springframework.util.StringUtils.hasText(endTime) ? java.time.LocalDateTime.parse(endTime) : null))
                 .orderByDesc(RiceStorageReceipt::getStorageTime);
         return page(new Page<>(pageNo, pageSize), wrapper);
     }
@@ -147,6 +145,7 @@ public class RiceStorageReceiptServiceImpl extends ServiceImpl<RiceStorageReceip
         for (QualityTestItemDTO itemDto : dto.getTestItems()) {
             RiceQualityTestItem item = new RiceQualityTestItem();
             BeanUtils.copyProperties(itemDto, item);
+            // DTO 字段名为 value，实体字段名为 itemValue，需显式映射
             item.setItemValue(itemDto.getValue());
             item.setQualityTestId(test.getQualityTestId());
             items.add(item);

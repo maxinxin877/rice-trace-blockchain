@@ -70,6 +70,11 @@ public class RiceMillingBatchServiceImpl extends ServiceImpl<RiceMillingBatchMap
             throw new BizException(ResultCode.VALIDATION_FAILED.getCode(),
                     "原粮批次 " + dto.getGrainBatchId() + " 入库质检不合格，不允许加工");
         }
+        // 3. 成品米批次必须存在
+        RiceProductBatch productBatch = productBatchMapper.selectById(dto.getProductBatchId());
+        if (productBatch == null) {
+            throw new BizException(ResultCode.NOT_FOUND.getCode(), "成品米批次不存在: " + dto.getProductBatchId());
+        }
 
         RiceMillingBatch batch = new RiceMillingBatch();
         BeanUtils.copyProperties(dto, batch);
@@ -90,13 +95,11 @@ public class RiceMillingBatchServiceImpl extends ServiceImpl<RiceMillingBatchMap
     public IPage<RiceMillingBatch> page(long pageNo, long pageSize, String grainBatchId, String productBatchId,
                                         String factoryId, String startTime, String endTime) {
         LambdaQueryWrapper<RiceMillingBatch> wrapper = new LambdaQueryWrapper<>();
-        LocalDateTime start = StringUtils.hasText(startTime) ? LocalDateTime.parse(startTime) : null;
-        LocalDateTime end = StringUtils.hasText(endTime) ? LocalDateTime.parse(endTime) : null;
         wrapper.eq(StringUtils.hasText(grainBatchId), RiceMillingBatch::getGrainBatchId, grainBatchId)
                 .eq(StringUtils.hasText(productBatchId), RiceMillingBatch::getProductBatchId, productBatchId)
                 .eq(StringUtils.hasText(factoryId), RiceMillingBatch::getFactoryId, factoryId)
-                .ge(start != null, RiceMillingBatch::getProcessStartTime, start)
-                .le(end != null, RiceMillingBatch::getProcessStartTime, end)
+                .ge(StringUtils.hasText(startTime), RiceMillingBatch::getProcessStartTime, (org.springframework.util.StringUtils.hasText(startTime) ? java.time.LocalDateTime.parse(startTime) : null))
+                .le(StringUtils.hasText(endTime), RiceMillingBatch::getProcessStartTime, (org.springframework.util.StringUtils.hasText(endTime) ? java.time.LocalDateTime.parse(endTime) : null))
                 .orderByDesc(RiceMillingBatch::getCreateTime);
         return page(new Page<>(pageNo, pageSize), wrapper);
     }

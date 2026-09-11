@@ -28,6 +28,7 @@ export enum QualityResult {
 export enum TraceCodeStatus {
   GENERATED = 'GENERATED',
   ACTIVATED = 'ACTIVATED',
+  DISABLED = 'DISABLED',
   DEACTIVATED = 'DEACTIVATED',
   RISK = 'RISK',
 }

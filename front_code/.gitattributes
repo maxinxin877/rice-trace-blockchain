@@ -1,0 +1,6 @@
+# 部署关键文件强制 LF 换行（CRLF 会影响 Dockerfile 与前端构建脚本）
+Dockerfile text eol=lf
+nginx.conf text eol=lf
+.dockerignore text eol=lf
+.env.production text eol=lf
+.env.development text eol=lf

@@ -63,8 +63,12 @@ public class RiceFarmingLogServiceImpl extends ServiceImpl<RiceFarmingLogMapper,
         BeanUtils.copyProperties(dto, logRecord);
         logRecord.setLogId(IdGen.generate("FLOG"));
         logRecord.setPlantingBatchId(plantingBatchId);
-        // 操作人：接口传入 operatorId，姓名取当前登录用户
-        logRecord.setOperatorName(UserContext.getUsername());
+        // 操作人：优先用接口传入的姓名/ID（干农活的人未必是录入人），未传时回退到当前登录用户
+        logRecord.setOperatorName(StringUtils.hasText(dto.getOperatorName())
+                ? dto.getOperatorName() : UserContext.getUsername());
+        if (!StringUtils.hasText(logRecord.getOperatorId())) {
+            logRecord.setOperatorId(String.valueOf(UserContext.getUserId()));
+        }
         // 记录摘要（参与上链）
         logRecord.setDataHash(computeDataHash(logRecord));
         logRecord.setChainStatus("PENDING");
@@ -82,12 +86,10 @@ public class RiceFarmingLogServiceImpl extends ServiceImpl<RiceFarmingLogMapper,
     public IPage<RiceFarmingLog> page(String plantingBatchId, String operationType,
                                       String startTime, String endTime, long pageNo, long pageSize) {
         LambdaQueryWrapper<RiceFarmingLog> wrapper = new LambdaQueryWrapper<>();
-        LocalDateTime start = StringUtils.hasText(startTime) ? LocalDateTime.parse(startTime) : null;
-        LocalDateTime end = StringUtils.hasText(endTime) ? LocalDateTime.parse(endTime) : null;
         wrapper.eq(RiceFarmingLog::getPlantingBatchId, plantingBatchId)
                 .eq(StringUtils.hasText(operationType), RiceFarmingLog::getOperationType, operationType)
-                .ge(start != null, RiceFarmingLog::getOperationTime, start)
-                .le(end != null, RiceFarmingLog::getOperationTime, end)
+                .ge(StringUtils.hasText(startTime), RiceFarmingLog::getOperationTime, (org.springframework.util.StringUtils.hasText(startTime) ? java.time.LocalDateTime.parse(startTime) : null))
+                .le(StringUtils.hasText(endTime), RiceFarmingLog::getOperationTime, (org.springframework.util.StringUtils.hasText(endTime) ? java.time.LocalDateTime.parse(endTime) : null))
                 .orderByDesc(RiceFarmingLog::getOperationTime);
         return page(new Page<>(pageNo, pageSize), wrapper);
     }

@@ -109,7 +109,8 @@ const riceRoutes: RouteRecordRaw[] = [
     path: '/rice/regulation/risk-warnings',
     name: 'RiskWarningList',
     component: () => import('@/views/rice/regulation/RiskWarningList.vue'),
-    meta: { title: '风险预警', icon: 'Warning', roles: ['RICE_ADMIN', 'BRAND', 'REGULATOR'] },
+    // BRAND 无 RICE_REGULATION_VIEW 权限（其预警走「窜货预警」页），菜单不再对其显示
+    meta: { title: '风险预警', icon: 'Warning', roles: ['RICE_ADMIN', 'REGULATOR'] },
   },
   {
     path: '/rice/regulation/audit-logs',
