@@ -58,9 +58,17 @@ public class RiceProductBatchServiceImpl extends ServiceImpl<RiceProductBatchMap
         }
         RiceProductBatch batch = new RiceProductBatch();
         BeanUtils.copyProperties(dto, batch);
-        batch.setStatus("DRAFT");
+        // 加工环节已用同一个 productBatchId 建过加工批次时，此处即完成链路关联；
+        // 若该加工批次已完成加工，成品状态直接进入 PACKAGED，否则保持 DRAFT
+        RiceMillingBatch milling = millingBatchMapper.selectOne(new LambdaQueryWrapper<RiceMillingBatch>()
+                .eq(RiceMillingBatch::getProductBatchId, dto.getProductBatchId())
+                .orderByDesc(RiceMillingBatch::getCreateTime)
+                .last("LIMIT 1"));
+        batch.setStatus(milling != null && milling.getProcessEndTime() != null ? "PACKAGED" : "DRAFT");
         save(batch);
-        log.info("成品米批次创建成功: productBatchId={}, productName={}", batch.getProductBatchId(), dto.getProductName());
+        log.info("成品米批次创建成功: productBatchId={}, productName={}, 关联加工批次={}, status={}",
+                batch.getProductBatchId(), dto.getProductName(),
+                milling == null ? "无" : milling.getMillingBatchId(), batch.getStatus());
         return batch;
     }
 

@@ -26,8 +26,36 @@
     <el-dialog v-model="showForm" title="新增成品批次" width="700px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="成品批次ID" prop="productBatchId">
-          <el-input v-model="form.productBatchId" placeholder="请输入成品批次ID，如 PB20260911001" />
+          <el-select
+            v-model="form.productBatchId"
+            filterable
+            placeholder="请选择碾米加工中定义的成品批次ID"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="m in availableMillingOptions"
+              :key="m.millingBatchId"
+              :label="`${m.productBatchId}（原粮批次 ${m.grainBatchId}，${m.processEndTime ? '已完成加工' : '加工中'}）`"
+              :value="m.productBatchId"
+            />
+          </el-select>
         </el-form-item>
+        <el-alert
+          v-if="matchedMilling"
+          type="success"
+          :closable="false"
+          show-icon
+          class="match-tip"
+          :title="`已关联加工批次 ${matchedMilling.millingBatchId}（原粮批次 ${matchedMilling.grainBatchId}，${matchedMilling.processEndTime ? '已完成加工' : '加工中'}）`"
+        />
+        <el-alert
+          v-else-if="availableMillingOptions.length === 0"
+          type="warning"
+          :closable="false"
+          show-icon
+          class="match-tip"
+          title="暂无可选的成品批次ID：请先到「碾米加工」创建加工批次并在其中自定义成品批次ID"
+        />
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="产品名称" prop="productName">
@@ -96,7 +124,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import PageContainer from '@/components/common/PageContainer.vue'
@@ -106,8 +134,10 @@ import DataTable from '@/components/common/DataTable.vue'
 import type { TableColumn } from '@/components/common/DataTable.vue'
 import NutritionEditor from '@/components/rice/NutritionEditor.vue'
 import { productBatchApi } from '@/api/modules/productBatch'
+import { millingBatchApi } from '@/api/modules/millingBatch'
 import { useTable } from '@/composables/useTable'
 import type { RiceProductBatch, NutritionFacts, TraceResult } from '@/types/productBatch'
+import type { RiceMillingBatch } from '@/types/millingBatch'
 
 // 溯源数据
 interface TraceNode {
@@ -221,13 +251,42 @@ const form = reactive({
 })
 
 const rules: FormRules = {
-  productBatchId: [{ required: true, message: '请输入批次ID', trigger: 'blur' }],
+  productBatchId: [{ required: true, message: '请输入批次ID', trigger: ['blur', 'change'] }],
   productName: [{ required: true, message: '请输入产品名称', trigger: 'blur' }],
   brandName: [{ required: true, message: '请输入品牌名称', trigger: 'blur' }],
   riceVariety: [{ required: true, message: '请输入水稻品种', trigger: 'blur' }],
   packageSpec: [{ required: true, message: '请输入包装规格', trigger: 'blur' }],
   standardNo: [{ required: true, message: '请输入执行标准号', trigger: 'blur' }],
 }
+
+/** 成品批次ID 只能取自碾米加工环节已定义的 ID */
+const millingOptions = ref<RiceMillingBatch[]>([])
+/** 已建成品批次的 ID：不再出现在可选项里，避免选完提交被判重复 */
+const usedProductBatchIds = ref<string[]>([])
+const matchedMilling = ref<RiceMillingBatch | null>(null)
+
+/** 可选 ID = 加工批次定义的 ID − 已占用 ID */
+const availableMillingOptions = computed(() =>
+  millingOptions.value.filter((m) => !usedProductBatchIds.value.includes(m.productBatchId)),
+)
+
+async function loadOptions() {
+  const [milling, products] = await Promise.allSettled([
+    millingBatchApi.getList({ pageSize: 100 }),
+    productBatchApi.getList({ pageSize: 100 }),
+  ])
+  millingOptions.value =
+    milling.status === 'fulfilled' && milling.value.code === 200 ? milling.value.data.records || [] : []
+  usedProductBatchIds.value =
+    products.status === 'fulfilled' && products.value.code === 200
+      ? (products.value.data.records || []).map((p) => p.productBatchId)
+      : []
+}
+
+// 下拉项全部来自加工批次，选中即已完成关联，本地匹配即可
+watch(() => form.productBatchId, (val) => {
+  matchedMilling.value = millingOptions.value.find((m) => m.productBatchId === val) || null
+})
 
 function openCreate() {
   form.productBatchId = ''
@@ -238,6 +297,8 @@ function openCreate() {
   form.standardNo = ''
   form.expectedSaleRegion = ''
   form.nutritionFacts = {}
+  matchedMilling.value = null
+  loadOptions()
   showForm.value = true
 }
 
@@ -270,6 +331,13 @@ async function submitForm() {
 </script>
 
 <style scoped>
+/* 成品批次ID 关联结果提示：与 label-width 对齐。
+   el-alert 自带 width:100%，需再扣掉左缩进，否则右边缘会溢出弹窗 */
+.match-tip {
+  width: calc(100% - 120px);
+  margin: -6px 0 14px 120px;
+}
+
 /* 溯源链路 */
 .trace-chain {
   display: flex;

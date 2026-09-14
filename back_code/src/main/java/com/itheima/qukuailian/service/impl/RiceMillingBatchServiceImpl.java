@@ -70,11 +70,8 @@ public class RiceMillingBatchServiceImpl extends ServiceImpl<RiceMillingBatchMap
             throw new BizException(ResultCode.VALIDATION_FAILED.getCode(),
                     "原粮批次 " + dto.getGrainBatchId() + " 入库质检不合格，不允许加工");
         }
-        // 3. 成品米批次必须存在
-        RiceProductBatch productBatch = productBatchMapper.selectById(dto.getProductBatchId());
-        if (productBatch == null) {
-            throw new BizException(ResultCode.NOT_FOUND.getCode(), "成品米批次不存在: " + dto.getProductBatchId());
-        }
+        // 3. 成品米批次不要求此时已存在：加工环节即自定义 productBatchId，
+        //    后续在「成品批次」中用同一个 ID 建档，两者靠该字段建立链路（溯源按此反查）
 
         RiceMillingBatch batch = new RiceMillingBatch();
         BeanUtils.copyProperties(dto, batch);
