@@ -4,7 +4,10 @@ export interface DashboardSummary {
   storedGrainWeightKg: number
   productBatchCount: number
   traceCodeCount: number
+  normalTraceCodeCount: number
+  riskTraceCodeCount: number
   scanCount: number
   riskWarningCount: number
   chainSuccessRate: number
+  updatedAt: string
 }

@@ -6,6 +6,7 @@
       <template #riskLevel="{ row }"><StatusTag type="risk" :value="row.riskLevel" /></template>
       <template #warningType="{ row }">{{ RISK_WARNING_TYPE_MAP[row.warningType] || row.warningType }}</template>
       <template #handled="{ row }">{{ row.handled ? '已处理' : '待处理' }}</template>
+      <template #createTime="{ row }">{{ row.createTime ? formatDateTime(row.createTime) : '-' }}</template>
       <template #actions="{ row }">
         <el-button v-if="!row.handled" type="primary" link size="small" @click="openHandle(row)">处理</el-button>
         <span v-else class="handled-text">—</span>
@@ -19,7 +20,7 @@
         <el-descriptions-item label="风险等级"><StatusTag type="risk" :value="currentWarning?.riskLevel || ''" /></el-descriptions-item>
         <el-descriptions-item label="关联业务">{{ currentWarning?.businessType }} / {{ currentWarning?.businessId }}</el-descriptions-item>
         <el-descriptions-item label="预警内容">{{ currentWarning?.warningContent }}</el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ currentWarning?.createdAt }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{ currentWarning?.createTime ? formatDateTime(currentWarning.createTime) : '-' }}</el-descriptions-item>
       </el-descriptions>
       <el-form :model="handleForm" label-width="80px">
         <el-form-item label="处理结果" required>
@@ -49,6 +50,7 @@ import type { TableColumn } from '@/components/common/DataTable.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
 import { useTable } from '@/composables/useTable'
 import { RISK_WARNING_TYPE_MAP, RISK_LEVEL_MAP } from '@/utils/constants'
+import { formatDateTime } from '@/utils/format'
 import { regulationApi } from '@/api/modules/regulation'
 import type { RiskWarningRecord } from '@/types/regulation'
 
@@ -65,7 +67,7 @@ const columns: TableColumn[] = [
   { prop: 'businessId', label: '关联业务', width: 180 },
   { prop: 'warningContent', label: '预警内容', minWidth: 280 },
   { prop: 'handled', label: '状态', width: 80, slot: 'handled' },
-  { prop: 'createdAt', label: '创建时间', width: 170 },
+  { prop: 'createTime', label: '创建时间', width: 170, slot: 'createTime' },
 ]
 
 const fetchFn = async (params: Record<string, unknown>) => {

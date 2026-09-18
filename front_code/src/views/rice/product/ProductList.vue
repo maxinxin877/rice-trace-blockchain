@@ -17,6 +17,11 @@
       :pageSize="pageSize"
       @page-change="onPageChange"
     >
+      <template #status="{ row }">
+        <el-tag :type="row.status === 'ON_SALE' ? 'success' : row.status === 'PACKAGED' ? 'warning' : 'info'" size="small">
+          {{ { DRAFT: '草稿', PACKAGED: '已包装', ON_SALE: '已上市' }[row.status] || row.status }}
+        </el-tag>
+      </template>
       <template #actions="{ row }">
         <el-button type="success" link size="small" @click="openTrace(row)">溯源</el-button>
       </template>
@@ -26,9 +31,38 @@
     <el-dialog v-model="showForm" title="新增成品批次" width="700px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="成品批次ID" prop="productBatchId">
-          <el-select v-model="form.productBatchId" placeholder="请选择加工时创建的成品批次ID" filterable style="width: 100%">
-            <el-option v-for="pid in millingProductIds" :key="pid" :label="pid" :value="pid" />
+          <el-select v-model="form.productBatchId" placeholder="请选择碾米加工中定义的成品批次ID" filterable style="width: 100%">
+            <el-option
+              v-for="opt in millingOptions"
+              :key="opt.millingBatchId"
+              :label="opt.label"
+              :value="opt.productBatchId"
+            />
           </el-select>
+          <el-alert
+            v-if="selectedMilling"
+            type="success"
+            :closable="false"
+            show-icon
+            style="margin-top: 8px"
+            :title="`已关联加工批次 ${selectedMilling.millingBatchId}（原粮批次 ${selectedMilling.grainBatchId}，${selectedMilling.statusText}）`"
+          />
+          <el-alert
+            v-else-if="!totalMillingCount"
+            type="warning"
+            :closable="false"
+            show-icon
+            style="margin-top: 8px"
+            title="暂无加工批次：请先到「碾米加工」创建加工批次（成品批次ID可手动输入或自动生成）"
+          />
+          <el-alert
+            v-else-if="totalMillingCount && !millingOptions.length"
+            type="info"
+            :closable="false"
+            show-icon
+            style="margin-top: 8px"
+            title="现有加工批次均已建档：如需新增成品批次，请先到「碾米加工」创建新的加工批次"
+          />
         </el-form-item>
         <el-row :gutter="20">
           <el-col :span="12">
@@ -98,7 +132,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import PageContainer from '@/components/common/PageContainer.vue'
@@ -111,6 +145,7 @@ import { productBatchApi } from '@/api/modules/productBatch'
 import { millingBatchApi } from '@/api/modules/millingBatch'
 import { useTable } from '@/composables/useTable'
 import type { RiceProductBatch, NutritionFacts, TraceResult } from '@/types/productBatch'
+import type { RiceMillingBatch } from '@/types/millingBatch'
 
 // 溯源数据
 interface TraceNode {
@@ -196,7 +231,7 @@ const columns: TableColumn[] = [
   { prop: 'packageSpec', label: '包装规格', width: 110 },
   { prop: 'standardNo', label: '执行标准', width: 130 },
   { prop: 'expectedSaleRegion', label: '预期销售区域', minWidth: 150 },
-  { prop: 'status', label: '状态', width: 90 },
+  { prop: 'status', label: '状态', width: 90, slot: 'status' },
 ]
 
 const fetchFn = (params: Record<string, unknown>) =>
@@ -204,15 +239,47 @@ const fetchFn = (params: Record<string, unknown>) =>
 
 const { loading, data, total, page, pageSize, loadData, onSearch, onReset, onPageChange } = useTable<RiceProductBatch>(fetchFn)
 
-// 碾米加工中已定义的成品批次ID（下拉选项）
-const millingProductIds = ref<string[]>([])
+// 碾米加工中"尚未建档成品批次"的候选（下拉只显示这些，防止重复建档）
+interface MillingOption {
+  millingBatchId: string
+  productBatchId: string
+  grainBatchId: string
+  statusText: string
+  label: string
+}
+const millingOptions = ref<MillingOption[]>([])
+const totalMillingCount = ref(0)
 
-onMounted(async () => {
+const selectedMilling = computed(() =>
+  millingOptions.value.find((opt) => opt.productBatchId === form.productBatchId))
+
+async function loadMillingOptions() {
+  const [millingRes, productRes] = await Promise.all([
+    millingBatchApi.getList({ pageSize: 100 }),
+    productBatchApi.getList({ pageSize: 100 }),
+  ])
+  if (millingRes.code !== 200) return
+  const allMilling = (millingRes.data.records as RiceMillingBatch[]).filter((m) => m.productBatchId)
+  totalMillingCount.value = allMilling.length
+  const existingIds = new Set(
+    productRes.code === 200 ? productRes.data.records.map((p) => p.productBatchId) : [])
+  millingOptions.value = allMilling
+    .filter((m) => !existingIds.has(m.productBatchId))
+    .map((m) => {
+      const statusText = m.processEndTime ? '已完成' : '加工中'
+      return {
+        millingBatchId: m.millingBatchId,
+        productBatchId: m.productBatchId,
+        grainBatchId: m.grainBatchId,
+        statusText,
+        label: `${m.productBatchId}（原粮批次 ${m.grainBatchId}，${statusText}）`,
+      }
+    })
+}
+
+onMounted(() => {
   loadData()
-  const res = await millingBatchApi.getList({ pageSize: 100 })
-  if (res.code === 200) {
-    millingProductIds.value = [...new Set(res.data.records.map((m) => m.productBatchId).filter(Boolean))]
-  }
+  loadMillingOptions()
 })
 
 // 表单
@@ -231,7 +298,7 @@ const form = reactive({
 })
 
 const rules: FormRules = {
-  productBatchId: [{ required: true, message: '请输入批次ID', trigger: 'blur' }],
+  productBatchId: [{ required: true, message: '请选择成品批次ID', trigger: 'change' }],
   productName: [{ required: true, message: '请输入产品名称', trigger: 'blur' }],
   brandName: [{ required: true, message: '请输入品牌名称', trigger: 'blur' }],
   riceVariety: [{ required: true, message: '请输入水稻品种', trigger: 'blur' }],
@@ -249,6 +316,7 @@ function openCreate() {
   form.expectedSaleRegion = ''
   form.nutritionFacts = {}
   showForm.value = true
+  loadMillingOptions()
 }
 
 async function submitForm() {
@@ -271,6 +339,7 @@ async function submitForm() {
     ElMessage.success('成品批次创建成功')
     showForm.value = false
     loadData()
+    loadMillingOptions()
   } catch {
     ElMessage.error('操作失败')
   } finally {

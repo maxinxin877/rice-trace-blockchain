@@ -28,4 +28,13 @@ public interface RiceTraceCodeService {
     IPage<RiceRiskWarning> pageChannelWarnings(long pageNo, long pageSize, String productBatchId,
                                                String traceCode, String riskLevel, String region,
                                                String startTime, String endTime);
+
+    /** 消费者扫码：按防伪码组装全链路溯源详情；防伪码不存在时返回 null */
+    Map<String, Object> traceDetail(String traceCode);
+
+    /** 消费者扫码：按防伪码查询链上核验结果（存证表无记录时用码自身上链字段兜底） */
+    Map<String, Object> chainProof(String traceCode);
+
+    /** 消费者扫码验真：记录扫码日志、累计次数，识别首次/重复/窜货/无效 */
+    Map<String, Object> verifyCode(String traceCode, String region);
 }

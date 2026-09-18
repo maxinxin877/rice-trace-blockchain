@@ -1,5 +1,6 @@
 package com.itheima.qukuailian.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.itheima.qukuailian.common.Result;
 import com.itheima.qukuailian.common.annotation.RequirePermission;
 import com.itheima.qukuailian.entity.RiceChainProof;
@@ -19,6 +20,15 @@ import java.util.Map;
 public class RiceChainProofController {
 
     private final ChainProofService chainProofService;
+
+    /** 分页查询链上存证列表 */
+    @GetMapping
+    @RequirePermission(PermissionConstants.RICE_CHAIN_PROOF_VIEW)
+    public Result<IPage<RiceChainProof>> pageProofs(@RequestParam(defaultValue = "1") long pageNo,
+                                                    @RequestParam(defaultValue = "20") long pageSize,
+                                                    @RequestParam(required = false) String businessType) {
+        return Result.success(chainProofService.pageProofs(pageNo, pageSize, businessType));
+    }
 
     /** 查询业务对象链上存证 */
     @GetMapping("/{businessType}/{businessId}")

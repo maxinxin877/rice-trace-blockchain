@@ -1,5 +1,6 @@
 package com.itheima.qukuailian.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.itheima.qukuailian.entity.RiceChainProof;
 
 import java.util.List;
@@ -26,6 +27,11 @@ public interface ChainProofService {
      * 查询业务对象链上存证（接口文档 v1.1 §7.6）
      */
     RiceChainProof getProof(String businessType, String businessId);
+
+    /**
+     * 分页查询链上存证列表（管理端"链上存证与核验"页）
+     */
+    IPage<RiceChainProof> pageProofs(long pageNo, long pageSize, String businessType);
 
     /**
      * 核验链上存证（接口文档 v1.1 §7.7）：

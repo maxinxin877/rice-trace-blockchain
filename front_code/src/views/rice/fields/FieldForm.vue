@@ -102,8 +102,8 @@
         <FileUpload v-model="form.basePhotoFileIds" accept=".jpg,.jpeg,.png,.webp" :limit="9" tip="支持 jpg/png/webp，每张不超过10MB" />
       </el-form-item>
 
-      <el-form-item v-if="isEdit" label="修改原因">
-        <el-input v-model="form.reason" type="textarea" :rows="2" placeholder="请输入修改原因（审计需要）" />
+      <el-form-item v-if="isEdit" label="修改原因" prop="reason">
+        <el-input v-model="form.reason" type="textarea" :rows="2" placeholder="请输入修改原因（审计必填）" />
       </el-form-item>
 
       <el-form-item>
@@ -175,6 +175,7 @@ const rules: FormRules = {
   district: [{ required: true, message: '请输入区/县', trigger: 'blur' }],
   address: [{ required: true, message: '请输入详细地址', trigger: 'blur' }],
   areaMu: [{ required: true, message: '请输入地块面积', trigger: 'blur' }],
+  reason: [{ required: true, message: '请输入修改原因', trigger: 'blur' }],
 }
 
 const submitting = ref(false)
@@ -235,6 +236,7 @@ async function handleSubmit() {
     if (isEdit.value) {
       await fieldApi.update({
         fieldId: form.fieldId!,
+        fieldCode: form.fieldCode,
         fieldName: form.fieldName,
         farmerId: form.farmerId,
         farmerName: form.farmerName,
@@ -267,8 +269,8 @@ async function handleSubmit() {
       ElMessage.success('地块创建成功')
     }
     router.back()
-  } catch (e) {
-    ElMessage.error('操作失败，请重试')
+  } catch {
+    // 具体错误原因已由请求拦截器统一弹出，这里不再重复提示
   } finally {
     submitting.value = false
   }

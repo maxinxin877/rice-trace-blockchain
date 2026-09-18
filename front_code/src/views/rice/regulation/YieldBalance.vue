@@ -30,20 +30,20 @@
       <el-table :data="results" border stripe>
         <el-table-column prop="businessId" label="种植批次" width="180" />
         <el-table-column prop="fieldName" label="地块" width="140" />
-        <el-table-column label="亩产(kg/亩)" width="110">
+        <el-table-column label="亩产/偏差" width="110">
           <template #default="{ row }">
             <span :style="{ color: row.muYieldPass ? '' : '#e6a23c' }">{{ row.muYield }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="产出率(%)" width="100">
+        <el-table-column label="产出率/偏差" width="100">
           <template #default="{ row }">
             <span :style="{ color: row.outputRatePass ? '' : '#e6a23c' }">{{ row.outputRate }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="亩产结果" width="100">
+        <el-table-column label="种植环节" width="100">
           <template #default="{ row }"><el-tag :type="row.muYieldPass ? 'success' : 'warning'" size="small">{{ row.muYieldPass ? '正常' : '异常' }}</el-tag></template>
         </el-table-column>
-        <el-table-column label="产出率结果" width="100">
+        <el-table-column label="加工环节" width="100">
           <template #default="{ row }"><el-tag :type="row.outputRatePass ? 'success' : 'warning'" size="small">{{ row.outputRatePass ? '正常' : '异常' }}</el-tag></template>
         </el-table-column>
         <el-table-column label="综合" width="80">
@@ -63,11 +63,11 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import PageContainer from '@/components/common/PageContainer.vue'
 import { regulationApi } from '@/api/modules/regulation'
-import type { YieldBalanceResult, YieldBalanceScope } from '@/types/regulation'
+import type { YieldBalanceResult, YieldBalanceItem, YieldBalanceScope } from '@/types/regulation'
 
 interface CheckResult {
-  businessId: string; fieldName: string; muYield: number; muYieldPass: boolean
-  outputRate: number; outputRatePass: boolean; passed: boolean; suggestion: string
+  businessId: string; fieldName: string; muYield: string; muYieldPass: boolean
+  outputRate: string; outputRatePass: boolean; passed: boolean; suggestion: string
 }
 
 const checking = ref(false)
@@ -79,25 +79,46 @@ const passRate = computed(() => {
   return Math.round(results.value.filter((r) => r.passed).length / results.value.length * 100)
 })
 
+/** 明细项名称兼容两种结构：新结构 itemName，旧结构 stage */
+function itemLabel(item: YieldBalanceItem): string {
+  return item.itemName || item.stage || ''
+}
+
 function mapResult(record: YieldBalanceResult): CheckResult {
-  const muYield = record.items.find((item) => item.itemName.includes('亩产'))
-  const outputRate = record.items.find((item) => item.itemName.includes('产出率'))
-  const failedItems = record.items.filter((item) => item.result !== 'PASS')
+  const items = record.items || []
+  // 种植环节：亩产校验，或旧结构的"种植到收储/预估产量/实际入库"
+  const muYield = items.find((item) => itemLabel(item).includes('亩产'))
+    || items.find((item) => /种植|预估|入库/.test(itemLabel(item)))
+  // 加工环节：精米产出率，或旧结构的"收储到加工/干粮加工/加工到成品"
+  const outputRate = items.find((item) => itemLabel(item).includes('产出率'))
+    || items.find((item) => /加工|干粮/.test(itemLabel(item)))
+  const failedItems = items.filter((item) => item.result !== 'PASS')
+  const fmt = (item: YieldBalanceItem | undefined, suffix: string): string => {
+    if (!item) return '—'
+    const v = item.computedValue ?? item.deviationPercent
+    return v === undefined || v === null ? '—' : `${v}${suffix}`
+  }
   return {
     businessId: record.plantingBatchId || record.productBatchId || record.checkId,
-    fieldName: record.checkId,
-    muYield: muYield?.computedValue || 0,
+    fieldName: record.fieldName || '—',
+    muYield: fmt(muYield, ''),
     muYieldPass: !muYield || muYield.result === 'PASS',
-    outputRate: outputRate?.computedValue || 0,
+    outputRate: fmt(outputRate, '%'),
     outputRatePass: !outputRate || outputRate.result === 'PASS',
     passed: record.result === 'PASS',
-    suggestion: failedItems.length ? `${failedItems.map((item) => item.itemName).join('、')}异常，请核对投入产出数据` : '各项指标均在正常范围内',
+    suggestion: failedItems.length
+      ? `${failedItems.map(itemLabel).join('、')}异常，请核对投入产出数据`
+      : '各项指标均在正常范围内',
   }
 }
 
 async function loadResults() {
-  const response = await regulationApi.getYieldBalanceResults({ page: 1, pageSize: 20 })
-  results.value = response.data.records.map(mapResult)
+  try {
+    const response = await regulationApi.getYieldBalanceResults({ page: 1, pageSize: 20 })
+    results.value = (response.data.records || []).map(mapResult)
+  } catch (e) {
+    results.value = []
+  }
 }
 
 async function runCheck() {

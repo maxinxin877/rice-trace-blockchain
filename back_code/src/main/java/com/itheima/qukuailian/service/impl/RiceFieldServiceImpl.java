@@ -106,9 +106,11 @@ public class RiceFieldServiceImpl extends ServiceImpl<RiceFieldMapper, RiceField
         String beforeHash = field.getCoordinateHash();
         boolean boundaryChanged = !Objects.equals(field.getGisBoundary(), dto.getGisBoundary());
 
-        // 完整覆盖更新
+        // 完整覆盖更新（地块编号一经创建不允许修改，强制保留原值）
+        String originalFieldCode = field.getFieldCode();
         BeanUtils.copyProperties(dto, field);
         field.setFieldId(fieldId);
+        field.setFieldCode(originalFieldCode);
         if (boundaryChanged) {
             // 边界变更：重算坐标哈希并重新上链
             field.setCoordinateHash(HashUtils.sha256(toJson(dto.getGisBoundary())));

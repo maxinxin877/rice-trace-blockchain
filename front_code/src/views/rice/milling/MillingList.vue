@@ -50,7 +50,11 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="成品批次ID" prop="productBatchId">
-              <el-input v-model="createForm.productBatchId" placeholder="自定义成品批次ID，如: PROD20261001001" />
+              <el-input v-model="createForm.productBatchId" placeholder="可手动输入或自动生成" clearable>
+                <template #append>
+                  <el-button @click="generateProductId">自动生成</el-button>
+                </template>
+              </el-input>
             </el-form-item>
           </el-col>
         </el-row>
@@ -199,6 +203,14 @@ const createRules: FormRules = {
   factoryId: [{ required: true, message: '请输入工厂ID', trigger: 'blur' }],
   grainOutWeightKg: [{ required: true, message: '请输入出库量', trigger: 'blur' }],
   processStartTime: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
+}
+
+/** 自动生成成品批次ID：PROD + yyyyMMdd + 3位随机数 */
+function generateProductId() {
+  const d = new Date()
+  const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`
+  const seq = String(Math.floor(Math.random() * 900) + 100)
+  createForm.productBatchId = `PROD${ymd}${seq}`
 }
 
 async function submitCreate() {

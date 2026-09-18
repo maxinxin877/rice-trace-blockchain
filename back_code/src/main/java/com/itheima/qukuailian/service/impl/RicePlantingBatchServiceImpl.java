@@ -18,6 +18,7 @@ import com.itheima.qukuailian.mapper.RiceFarmingLogMapper;
 import com.itheima.qukuailian.mapper.RiceFieldMapper;
 import com.itheima.qukuailian.mapper.RicePlantingBatchMapper;
 import com.itheima.qukuailian.service.AuditLogService;
+import com.itheima.qukuailian.service.ChainProofService;
 import com.itheima.qukuailian.service.RicePlantingBatchService;
 import com.itheima.qukuailian.utils.HashUtils;
 import com.itheima.qukuailian.utils.IdGen;
@@ -30,6 +31,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -46,6 +48,7 @@ public class RicePlantingBatchServiceImpl extends ServiceImpl<RicePlantingBatchM
     private final RiceFarmingLogMapper farmingLogMapper;
     private final RiceEnvironmentRecordMapper environmentRecordMapper;
     private final AuditLogService auditLogService;
+    private final ChainProofService chainProofService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -74,6 +77,8 @@ public class RicePlantingBatchServiceImpl extends ServiceImpl<RicePlantingBatchM
         batch.setChainStatus("PENDING");
         save(batch);
 
+        // 种植批次摘要异步上链，成功后回写批次链上状态
+        chainProofService.submit("PLANTING_BATCH", batch.getPlantingBatchId(), digest(batch), null);
         auditLogService.record("PLANTING_BATCH", batch.getPlantingBatchId(), "CREATE",
                 null, digest(batch), "创建种植批次", ip);
         log.info("种植批次创建成功: plantingBatchId={}, fieldId={}", batch.getPlantingBatchId(), dto.getFieldId());
@@ -92,7 +97,33 @@ public class RicePlantingBatchServiceImpl extends ServiceImpl<RicePlantingBatchM
                 .ge(sowingStart != null, RicePlantingBatch::getSowingDate, sowingStart)
                 .le(sowingEnd != null, RicePlantingBatch::getSowingDate, sowingEnd)
                 .orderByDesc(RicePlantingBatch::getCreateTime);
-        return page(new Page<>(pageNo, pageSize), wrapper);
+        IPage<RicePlantingBatch> result = page(new Page<>(pageNo, pageSize), wrapper);
+        fillFieldInfo(result.getRecords());
+        return result;
+    }
+
+    /** 批量填充地块名称/编号（避免 N+1 查询） */
+    private void fillFieldInfo(List<RicePlantingBatch> batches) {
+        if (batches == null || batches.isEmpty()) {
+            return;
+        }
+        List<String> fieldIds = batches.stream()
+                .map(RicePlantingBatch::getFieldId)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+        if (fieldIds.isEmpty()) {
+            return;
+        }
+        Map<String, RiceField> fieldMap = fieldMapper.selectBatchIds(fieldIds).stream()
+                .collect(java.util.stream.Collectors.toMap(RiceField::getFieldId, f -> f, (a, b) -> a));
+        for (RicePlantingBatch batch : batches) {
+            RiceField field = fieldMap.get(batch.getFieldId());
+            if (field != null) {
+                batch.setFieldName(field.getFieldName());
+                batch.setFieldCode(field.getFieldCode());
+            }
+        }
     }
 
     @Override
@@ -102,7 +133,12 @@ public class RicePlantingBatchServiceImpl extends ServiceImpl<RicePlantingBatchM
             throw new BizException(ResultCode.NOT_FOUND.getCode(), "种植批次不存在: " + plantingBatchId);
         }
         // 地块摘要
-        batch.setField(fieldMapper.selectById(batch.getFieldId()));
+        RiceField field = fieldMapper.selectById(batch.getFieldId());
+        batch.setField(field);
+        if (field != null) {
+            batch.setFieldName(field.getFieldName());
+            batch.setFieldCode(field.getFieldCode());
+        }
         // 农事记录 / 环境数据摘要
         batch.setFarmingLogCount(Math.toIntExact(farmingLogMapper.selectCount(
                 new LambdaQueryWrapper<RiceFarmingLog>()

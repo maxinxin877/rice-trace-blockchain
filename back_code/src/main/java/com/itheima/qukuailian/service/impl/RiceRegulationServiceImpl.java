@@ -139,7 +139,38 @@ public class RiceRegulationServiceImpl implements RiceRegulationService {
                 .ge(start != null, RiceYieldBalance::getCreateTime, start)
                 .le(end != null, RiceYieldBalance::getCreateTime, end)
                 .orderByDesc(RiceYieldBalance::getCreateTime);
-        return yieldBalanceMapper.selectPage(new Page<>(pageNo, pageSize), wrapper);
+        IPage<RiceYieldBalance> page = yieldBalanceMapper.selectPage(new Page<>(pageNo, pageSize), wrapper);
+        fillFieldNames(page.getRecords());
+        return page;
+    }
+
+    /** 批量填充校验结果关联的地块名称 */
+    private void fillFieldNames(List<RiceYieldBalance> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+        List<String> batchIds = records.stream()
+                .map(RiceYieldBalance::getPlantingBatchId)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+        if (batchIds.isEmpty()) {
+            return;
+        }
+        Map<String, String> fieldNameMap = new HashMap<>();
+        List<RicePlantingBatch> batches = plantingBatchMapper.selectBatchIds(batchIds);
+        List<String> fieldIds = batches.stream()
+                .map(RicePlantingBatch::getFieldId)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+        if (!fieldIds.isEmpty()) {
+            fieldMapper.selectBatchIds(fieldIds)
+                    .forEach(f -> fieldNameMap.put(f.getFieldId(), f.getFieldName()));
+        }
+        Map<String, String> batchFieldMap = new HashMap<>();
+        batches.forEach(b -> batchFieldMap.put(b.getPlantingBatchId(), fieldNameMap.get(b.getFieldId())));
+        records.forEach(r -> r.setFieldName(batchFieldMap.getOrDefault(r.getPlantingBatchId(), "-")));
     }
 
     @Override
@@ -188,9 +219,20 @@ public class RiceRegulationServiceImpl implements RiceRegulationService {
         summary.put("storedGrainWeightKg", sumWetGrainWeight());
         summary.put("productBatchCount", productBatchMapper.selectCount(null));
         summary.put("traceCodeCount", traceCodeMapper.selectCount(null));
+        // 防伪码风险构成按码口径统计：状态 RISK 或风险等级 HIGH 视为风险码，其余为正常码
+        long riskTraceCodeCount = traceCodeMapper.selectCount(
+                new LambdaQueryWrapper<RiceTraceCode>()
+                        .eq(RiceTraceCode::getStatus, "RISK")
+                        .or()
+                        .eq(RiceTraceCode::getRiskLevel, "HIGH"));
+        long totalTraceCodeCount = traceCodeMapper.selectCount(null);
+        summary.put("riskTraceCodeCount", riskTraceCodeCount);
+        summary.put("normalTraceCodeCount", Math.max(0, totalTraceCodeCount - riskTraceCodeCount));
         summary.put("scanCount", scanLogMapper.selectCount(null));
         summary.put("riskWarningCount", riskWarningMapper.selectCount(null));
         summary.put("chainSuccessRate", chainSuccessRate());
+        // 演示数据基准日期（全链路种子数据日期为 2026-09-17）
+        summary.put("updatedAt", "2026-09-17");
         return summary;
     }
 

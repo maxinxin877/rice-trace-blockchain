@@ -94,11 +94,14 @@ export const traceabilityApi = {
   },
 
   async getTraceDetail(traceCode: string): Promise<ApiResponse<TraceDetail | null>> {
+    if (!USE_MOCK) return (await get<TraceDetail | null>(`/mini/traces/${encodeURIComponent(traceCode)}`)).data
     await mockDelay(350)
     return ok(traceDetails[traceCode] || null)
   },
 
   async verifyTraceCode(traceCode: string, region = '未知地区'): Promise<ApiResponse<VerifyResult>> {
+    if (!USE_MOCK)
+      return (await post<VerifyResult>(`/mini/traces/${encodeURIComponent(traceCode)}/verify`, { region })).data
     await mockDelay(450)
     const record = traceCodes.find((item) => item.traceCode === traceCode)
     const currentScanAt = mockNow()
@@ -120,6 +123,22 @@ export const traceabilityApi = {
     return ok(chainProofs.find((item) => item.businessType === businessType && item.businessId === businessId) || null)
   },
 
+  /** 消费者扫码页：按防伪码公开查询链上存证（免登录） */
+  async getMiniChainProof(traceCode: string): Promise<ApiResponse<ChainProofRecord | null>> {
+    if (!USE_MOCK) return (await get<ChainProofRecord | null>(`/mini/traces/${encodeURIComponent(traceCode)}/chain-proof`)).data
+    await mockDelay(300)
+    return ok(chainProofs.find((item) => item.businessType === 'TRACE_CODE' && item.businessId === traceCode) || null)
+  },
+
+  /** 消费者扫码页：重新计算摘要并核验（免登录） */
+  async verifyMiniChainProof(traceCode: string): Promise<ApiResponse<ChainProofRecord | null>> {
+    if (!USE_MOCK) return (await post<ChainProofRecord | null>(`/mini/traces/${encodeURIComponent(traceCode)}/chain-proof/verify`)).data
+    await mockDelay(600)
+    const proof = chainProofs.find((item) => item.businessType === 'TRACE_CODE' && item.businessId === traceCode) || null
+    if (proof) proof.verified = proof.currentHash === proof.chainHash
+    return ok(proof)
+  },
+
   async verifyChainProof(businessType: string, businessId: string): Promise<ApiResponse<ChainProofRecord | null>> {
     if (!USE_MOCK) return (await post<ChainProofRecord>(`/rice/chain-proofs/${businessType}/${businessId}/verify`)).data
     await mockDelay(600)
@@ -128,7 +147,15 @@ export const traceabilityApi = {
     return ok(proof)
   },
 
-  async getChainProofs(): Promise<ApiResponse<ChainProofRecord[]>> {
+  async getChainProofs(businessType?: string): Promise<ApiResponse<ChainProofRecord[]>> {
+    if (!USE_MOCK) {
+      const response = (await get<PageResponse<ChainProofRecord>['data']>('/rice/chain-proofs', {
+        pageNo: 1,
+        pageSize: 100,
+        ...(businessType ? { businessType } : {}),
+      })).data
+      return ok(response.data.records)
+    }
     await mockDelay()
     return ok([...chainProofs])
   },

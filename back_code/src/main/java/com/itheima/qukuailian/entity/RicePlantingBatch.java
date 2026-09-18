@@ -57,6 +57,14 @@ public class RicePlantingBatch {
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 
+    /** 地块名称（非表字段，列表/详情关联填充） */
+    @TableField(exist = false)
+    private String fieldName;
+
+    /** 地块编号（非表字段，列表/详情关联填充） */
+    @TableField(exist = false)
+    private String fieldCode;
+
     /** 地块摘要（非表字段，详情接口填充） */
     @TableField(exist = false)
     private RiceField field;

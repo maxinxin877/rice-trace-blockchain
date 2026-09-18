@@ -42,4 +42,8 @@ public class RiceYieldBalance {
     private String chainError;
 
     private LocalDateTime createTime;
+
+    /** 展示用：地块名称（关联种植批次） */
+    @TableField(exist = false)
+    private String fieldName;
 }

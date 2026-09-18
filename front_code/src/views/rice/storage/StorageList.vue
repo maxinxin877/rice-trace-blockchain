@@ -72,17 +72,17 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="8">
-            <el-form-item label="水分(%)" prop="moisturePercent">
-              <el-input-number v-model="form.moisturePercent" :min="0" :max="40" :precision="2" style="width: 100%" />
+            <el-form-item label="水分(%)" prop="moisturePercent" label-width="78px">
+              <el-input-number v-model="form.moisturePercent" :min="0" :max="40" :precision="2" controls-position="right" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="杂质(%)" prop="impurityPercent">
-              <el-input-number v-model="form.impurityPercent" :min="0" :max="20" :precision="2" style="width: 100%" />
+            <el-form-item label="杂质(%)" prop="impurityPercent" label-width="78px">
+              <el-input-number v-model="form.impurityPercent" :min="0" :max="20" :precision="2" controls-position="right" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="粮食等级" prop="grainGrade">
+            <el-form-item label="粮食等级" prop="grainGrade" label-width="78px">
               <el-select v-model="form.grainGrade" style="width: 100%">
                 <el-option label="一等" value="一等" />
                 <el-option label="二等" value="二等" />

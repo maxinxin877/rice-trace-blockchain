@@ -46,4 +46,15 @@ public class RiceChainProof {
 
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+
+    /** 展示用：最近核验结果（非持久化） */
+    @TableField(exist = false)
+    private Boolean verified;
+
+    /** 展示用：链上摘要 / 当前摘要（核验时回填，非持久化） */
+    @TableField(exist = false)
+    private String chainHash;
+
+    @TableField(exist = false)
+    private String currentHash;
 }

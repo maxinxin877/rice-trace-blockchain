@@ -11,7 +11,7 @@
       <el-table-column prop="businessId" label="业务 ID" min-width="190" />
       <el-table-column label="上链状态" width="100"><template #default="{ row }"><StatusTag type="chain" :value="row.chainStatus" /></template></el-table-column>
       <el-table-column prop="blockHeight" label="区块高度" width="110" />
-      <el-table-column prop="chainTime" label="上链时间" width="170" />
+      <el-table-column label="上链时间" width="170"><template #default="{ row }">{{ formatDateTime(row.chainTime) }}</template></el-table-column>
       <el-table-column label="核验" width="90"><template #default="{ row }"><el-tag :type="row.verified ? 'success' : 'danger'">{{ row.verified ? '一致' : '不一致' }}</el-tag></template></el-table-column>
       <el-table-column label="交易哈希" min-width="170"><template #default="{ row }"><span class="hash">{{ shortHash(row.txId) }}</span></template></el-table-column>
       <el-table-column label="操作" width="150"><template #default="{ row }"><el-button type="primary" link @click="openDetail(row)">详情</el-button><el-button type="success" link :loading="verifyingId===row.businessId" @click="verify(row)">核验</el-button></template></el-table-column>
@@ -23,7 +23,7 @@
           <el-descriptions-item label="业务对象">{{ currentProof.businessType }} / {{ currentProof.businessId }}</el-descriptions-item>
           <el-descriptions-item label="交易 ID"><span class="hash break">{{ currentProof.txId }}</span></el-descriptions-item>
           <el-descriptions-item label="区块高度">{{ currentProof.blockHeight }}</el-descriptions-item>
-          <el-descriptions-item label="上链时间">{{ currentProof.chainTime }}</el-descriptions-item>
+          <el-descriptions-item label="上链时间">{{ formatDateTime(currentProof.chainTime) }}</el-descriptions-item>
           <el-descriptions-item label="链上摘要"><span class="hash break">{{ currentProof.chainHash }}</span></el-descriptions-item>
           <el-descriptions-item label="当前摘要"><span class="hash break">{{ currentProof.currentHash }}</span></el-descriptions-item>
           <el-descriptions-item label="文件指纹"><div v-for="hash in currentProof.fileHashes" :key="hash" class="hash break">{{ hash }}</div><span v-if="!currentProof.fileHashes.length">无附件</span></el-descriptions-item>
@@ -39,10 +39,11 @@ import { ElMessage } from 'element-plus'
 import PageContainer from '@/components/common/PageContainer.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
 import { traceabilityApi } from '@/api/modules/traceability'
+import { formatDateTime } from '@/utils/format'
 import type { ChainProofRecord } from '@/types/traceability'
 
 const businessTypes=[{label:'防伪码',value:'TRACE_CODE'},{label:'成品批次',value:'PRODUCT_BATCH'},{label:'地块',value:'FIELD'},{label:'种植批次',value:'PLANTING_BATCH'},{label:'入库单',value:'STORAGE_RECEIPT'},{label:'风险预警',value:'RISK_WARNING'}]
-const query=reactive({businessType:'TRACE_CODE',businessId:'RC20260718000001'})
+const query=reactive({businessType:'TRACE_CODE',businessId:'RC20260917000001'})
 const loading=ref(false), proofs=ref<ChainProofRecord[]>([]), showDetail=ref(false), currentProof=ref<ChainProofRecord>(), verifyingId=ref('')
 function shortHash(value:string){return value.length>22?`${value.slice(0,12)}…${value.slice(-8)}`:value}
 async function loadData(){loading.value=true;try{proofs.value=(await traceabilityApi.getChainProofs()).data}finally{loading.value=false}}

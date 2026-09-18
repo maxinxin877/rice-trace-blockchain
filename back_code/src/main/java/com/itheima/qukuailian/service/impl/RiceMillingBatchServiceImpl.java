@@ -41,6 +41,7 @@ public class RiceMillingBatchServiceImpl extends ServiceImpl<RiceMillingBatchMap
     private final RiceStorageReceiptMapper storageReceiptMapper;
     private final RiceQualityTestMapper qualityTestMapper;
     private final RiceProductBatchMapper productBatchMapper;
+    private final RicePlantingBatchMapper plantingBatchMapper;
     private final RiceChainProofMapper chainProofMapper;
     private final RiceRiskWarningMapper riskWarningMapper;
     private final FileResourceMapper fileResourceMapper;
@@ -77,7 +78,14 @@ public class RiceMillingBatchServiceImpl extends ServiceImpl<RiceMillingBatchMap
         batch.setChainStatus("PENDING");
         save(batch);
 
-        // 4. 原粮批次与成品批次映射关系上链
+        // 4. 种植批次状态 -> MILLING（加工中）
+        RicePlantingBatch plantingBatch = plantingBatchMapper.selectById(receipt.getPlantingBatchId());
+        if (plantingBatch != null && !"MILLING".equals(plantingBatch.getStatus())) {
+            plantingBatch.setStatus("MILLING");
+            plantingBatchMapper.updateById(plantingBatch);
+        }
+
+        // 5. 原粮批次与成品批次映射关系上链
         chainProofService.submit("MILLING_BATCH", batch.getMillingBatchId(), digest(batch), null);
         auditLogService.record("MILLING_BATCH", batch.getMillingBatchId(), "CREATE",
                 null, digest(batch), "创建加工批次", ip);
@@ -149,11 +157,21 @@ public class RiceMillingBatchServiceImpl extends ServiceImpl<RiceMillingBatchMap
             createYieldWarning(batch, yieldRate);
         }
 
-        // 4. 成品批次状态 -> PACKAGED
+        // 4. 成品批次状态 -> PACKAGED，种植批次同步 -> PACKAGED
         RiceProductBatch productBatch = productBatchMapper.selectById(batch.getProductBatchId());
         if (productBatch != null && !"ON_SALE".equals(productBatch.getStatus())) {
             productBatch.setStatus("PACKAGED");
             productBatchMapper.updateById(productBatch);
+        }
+        RiceStorageReceipt receiptForPlant = storageReceiptMapper.selectOne(
+                new LambdaQueryWrapper<RiceStorageReceipt>()
+                        .eq(RiceStorageReceipt::getGrainBatchId, batch.getGrainBatchId()));
+        if (receiptForPlant != null) {
+            RicePlantingBatch plantingBatch = plantingBatchMapper.selectById(receiptForPlant.getPlantingBatchId());
+            if (plantingBatch != null && !"ON_SALE".equals(plantingBatch.getStatus())) {
+                plantingBatch.setStatus("PACKAGED");
+                plantingBatchMapper.updateById(plantingBatch);
+            }
         }
 
         auditLogService.record("MILLING_BATCH", millingBatchId, "UPDATE",

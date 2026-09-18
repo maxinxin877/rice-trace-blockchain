@@ -11,12 +11,18 @@ export interface YieldBalanceCheckPayload {
 }
 
 export interface YieldBalanceItem {
-  itemName: string
-  inputValue: number
-  outputValue: number
-  computedValue: number
-  unit: string
-  threshold: string
+  /** 新结构（亩产/产出率校验） */
+  itemName?: string
+  inputValue?: number
+  outputValue?: number
+  computedValue?: number
+  unit?: string
+  threshold?: string
+  /** 旧结构（全链路分段平衡：种植到收储/收储到加工/加工到成品） */
+  stage?: string
+  actualKg?: number
+  expectedKg?: number
+  deviationPercent?: number
   result: CheckResultStatus
 }
 
@@ -24,8 +30,10 @@ export interface YieldBalanceResult extends YieldBalanceCheckPayload {
   checkId: string
   result: CheckResultStatus
   items: YieldBalanceItem[]
+  fieldName?: string
   chainStatus: 'PENDING' | 'SUCCESS' | 'FAILED'
   checkedAt: string
+  createTime?: string
 }
 
 export interface YieldBalanceQuery extends PageQuery {
@@ -50,7 +58,7 @@ export interface RiskWarningRecord {
   handledAt: string | null
   handleResult: string | null
   chainStatus: 'PENDING' | 'SUCCESS' | 'FAILED'
-  createdAt: string
+  createTime: string
 }
 
 export interface RiskWarningQuery extends PageQuery {

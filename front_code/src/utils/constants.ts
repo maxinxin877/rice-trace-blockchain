@@ -12,10 +12,14 @@ import {
 
 /** 种植批次状态映射 */
 export const RICE_BATCH_STATUS_MAP: Record<string, { label: string; color: string }> = {
+  DRAFT: { label: '草稿', color: '#909399' },
   [RiceBatchStatus.PLANTED]: { label: '种植中', color: '#409EFF' },
   [RiceBatchStatus.HARVESTED]: { label: '已收割', color: '#E6A23C' },
   [RiceBatchStatus.STORED]: { label: '已入库', color: '#67C23A' },
   [RiceBatchStatus.MILLING]: { label: '加工中', color: '#909399' },
+  PACKAGED: { label: '已包装', color: '#009688' },
+  ON_SALE: { label: '已上市', color: '#67C23A' },
+  LOCKED: { label: '已锁定', color: '#F56C6C' },
   [RiceBatchStatus.COMPLETED]: { label: '已完成', color: '#67C23A' },
 }
 
