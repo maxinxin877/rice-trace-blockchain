@@ -19,6 +19,7 @@ import com.itheima.qukuailian.mapper.RiceRiskWarningMapper;
 import com.itheima.qukuailian.mapper.RiceTraceCodeMapper;
 import com.itheima.qukuailian.service.AuditLogService;
 import com.itheima.qukuailian.service.ChainProofService;
+import com.itheima.qukuailian.service.RiceComplianceGuardService;
 import com.itheima.qukuailian.service.RiceTraceCodeService;
 import com.itheima.qukuailian.utils.HashUtils;
 import com.itheima.qukuailian.utils.IdGen;
@@ -52,6 +53,8 @@ public class RiceTraceCodeServiceImpl extends ServiceImpl<RiceTraceCodeMapper, R
     private final RiceRiskWarningMapper riskWarningMapper;
     private final ChainProofService chainProofService;
     private final AuditLogService auditLogService;
+    /** 生产防错校验（赋码激活前的质量/召回拦截） */
+    private final RiceComplianceGuardService complianceGuardService;
 
     @Value("${app.qr-base-url:pages/rice/trace/index?code=}")
     private String qrBaseUrl;
@@ -94,6 +97,10 @@ public class RiceTraceCodeServiceImpl extends ServiceImpl<RiceTraceCodeMapper, R
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> activate(TraceCodeActivateDTO dto, String ip) {
+        // 生产防错：成品批次被冻结/召回，或加工链路未完成质检时，禁止赋码上市（需求 §8.4 / §九 FC-05）
+        complianceGuardService.assertPass("PRODUCT_BATCH", dto.getProductBatchId(),
+                RiceComplianceGuardService.ACTION_ACTIVATE);
+
         LocalDateTime activatedAt = dto.getActivatedAt() == null ? LocalDateTime.now() : dto.getActivatedAt();
         int activatedCount = 0;
         int failedCount = 0;

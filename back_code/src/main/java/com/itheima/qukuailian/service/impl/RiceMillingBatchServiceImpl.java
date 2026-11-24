@@ -13,6 +13,7 @@ import com.itheima.qukuailian.entity.*;
 import com.itheima.qukuailian.mapper.*;
 import com.itheima.qukuailian.service.AuditLogService;
 import com.itheima.qukuailian.service.ChainProofService;
+import com.itheima.qukuailian.service.RiceComplianceGuardService;
 import com.itheima.qukuailian.service.RiceMillingBatchService;
 import com.itheima.qukuailian.utils.HashUtils;
 import com.itheima.qukuailian.utils.IdGen;
@@ -39,13 +40,14 @@ public class RiceMillingBatchServiceImpl extends ServiceImpl<RiceMillingBatchMap
     private static final BigDecimal YIELD_MAX = new BigDecimal("75");
 
     private final RiceStorageReceiptMapper storageReceiptMapper;
-    private final RiceQualityTestMapper qualityTestMapper;
     private final RiceProductBatchMapper productBatchMapper;
     private final RiceChainProofMapper chainProofMapper;
     private final RiceRiskWarningMapper riskWarningMapper;
     private final FileResourceMapper fileResourceMapper;
     private final ChainProofService chainProofService;
     private final AuditLogService auditLogService;
+    /** 生产防错校验（需求 §8.4 / §九 FC-02/FC-03/FC-05） */
+    private final RiceComplianceGuardService complianceGuardService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -59,17 +61,10 @@ public class RiceMillingBatchServiceImpl extends ServiceImpl<RiceMillingBatchMap
         if (receipt == null) {
             throw new BizException(ResultCode.NOT_FOUND.getCode(), "原粮批次不存在: " + dto.getGrainBatchId());
         }
-        // 2. 入库质检必须合格（接口文档 §5.18）
-        RiceQualityTest qualityTest = qualityTestMapper.selectOne(
-                new LambdaQueryWrapper<RiceQualityTest>()
-                        .eq(RiceQualityTest::getBusinessType, "STORAGE")
-                        .eq(RiceQualityTest::getBusinessId, receipt.getStorageReceiptId())
-                        .orderByDesc(RiceQualityTest::getCreateTime)
-                        .last("LIMIT 1"));
-        if (qualityTest == null || !"PASS".equals(qualityTest.getOverallResult())) {
-            throw new BizException(ResultCode.VALIDATION_FAILED.getCode(),
-                    "原粮批次 " + dto.getGrainBatchId() + " 入库质检不合格，不允许加工");
-        }
+        // 2. 生产防错：上游批次冻结 / 入库质检不合格 / 原粮召回冻结，任一命中即禁止加工
+        //    （接口文档 §5.18「入库质检必须合格」已收敛到 QUALITY_PASS 规则内，口径保持一致）
+        complianceGuardService.assertPass("GRAIN_BATCH", dto.getGrainBatchId(),
+                RiceComplianceGuardService.ACTION_MILL);
         // 3. 成品米批次必须存在
         RiceProductBatch productBatch = productBatchMapper.selectById(dto.getProductBatchId());
         if (productBatch == null) {

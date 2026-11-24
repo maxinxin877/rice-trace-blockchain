@@ -14,6 +14,7 @@ import com.itheima.qukuailian.entity.*;
 import com.itheima.qukuailian.mapper.*;
 import com.itheima.qukuailian.service.AuditLogService;
 import com.itheima.qukuailian.service.ChainProofService;
+import com.itheima.qukuailian.service.RiceComplianceGuardService;
 import com.itheima.qukuailian.service.RiceStorageReceiptService;
 import com.itheima.qukuailian.utils.HashUtils;
 import com.itheima.qukuailian.utils.IdGen;
@@ -44,6 +45,8 @@ public class RiceStorageReceiptServiceImpl extends ServiceImpl<RiceStorageReceip
     private final FileResourceMapper fileResourceMapper;
     private final ChainProofService chainProofService;
     private final AuditLogService auditLogService;
+    /** 生产防错校验（需求 §8.4：批次冻结 / 休药期未满禁止入库） */
+    private final RiceComplianceGuardService complianceGuardService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -58,6 +61,9 @@ public class RiceStorageReceiptServiceImpl extends ServiceImpl<RiceStorageReceip
         if (STORED_STATUS.contains(batch.getStatus())) {
             throw new BizException(ResultCode.CONFLICT.getCode(), "该种植批次已入库，不能重复入库");
         }
+        // 1.1 生产防错：批次是否被召回冻结、休药期是否已满（需求 §8.4 / §九 FC-03）
+        complianceGuardService.assertPass("PLANTING_BATCH", dto.getPlantingBatchId(),
+                RiceComplianceGuardService.ACTION_STORE);
         // 2. 原粮批次唯一
         long count = lambdaQuery().eq(RiceStorageReceipt::getGrainBatchId, dto.getGrainBatchId()).count();
         if (count > 0) {

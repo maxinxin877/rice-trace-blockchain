@@ -76,6 +76,13 @@ const riceRoutes: RouteRecordRaw[] = [
     meta: { title: '环境数据', icon: 'Sunny', roles: ['RICE_ADMIN', 'FARMER', 'REGULATOR'] },
   },
   {
+    path: '/rice/scan-collect',
+    name: 'ScanCollect',
+    component: () => import('@/views/rice/collect/ScanCollect.vue'),
+    // 需求 §九 CJ-01/02/05/06/07：扫码采集、防重、离线补传、补录审核
+    meta: { title: '扫码采集', icon: 'Aim', roles: ['RICE_ADMIN', 'FARMER', 'WAREHOUSE', 'FACTORY', 'BRAND', 'REGULATOR'] },
+  },
+  {
     path: '/rice/storage-receipts',
     name: 'StorageReceiptList',
     component: () => import('@/views/rice/storage/StorageList.vue'),
@@ -100,10 +107,51 @@ const riceRoutes: RouteRecordRaw[] = [
     meta: { title: '防伪码管理', icon: 'Ticket', roles: ['RICE_ADMIN', 'BRAND', 'REGULATOR'] },
   },
   {
+    path: '/rice/trace-center',
+    name: 'TraceCenter',
+    component: () => import('@/views/rice/trace/TraceCenter.vue'),
+    // 需求 §六-3 / §九 ZS-01·ZS-02：正反向追溯与追溯可视化
+    meta: { title: '追溯查询', icon: 'Search', roles: ['RICE_ADMIN', 'FARMER', 'WAREHOUSE', 'FACTORY', 'BRAND', 'REGULATOR'] },
+  },
+  {
+    path: '/rice/recalls',
+    name: 'RecallList',
+    component: () => import('@/views/rice/recall/RecallList.vue'),
+    // 需求 §六-4 / §九 FC-05·FC-06：召回冻结与处置闭环
+    meta: { title: '召回管理', icon: 'RefreshLeft', roles: ['RICE_ADMIN', 'BRAND', 'REGULATOR'] },
+  },
+  {
+    path: '/rice/recalls/detail/:id',
+    name: 'RecallDetail',
+    component: () => import('@/views/rice/recall/RecallDetail.vue'),
+    meta: { title: '召回详情', hidden: true, roles: ['RICE_ADMIN', 'BRAND', 'REGULATOR'] },
+  },
+  {
     path: '/rice/channel-warnings',
     name: 'ChannelWarnings',
     component: () => import('@/views/rice/trace/ChannelWarnings.vue'),
     meta: { title: '窜货预警', icon: 'LocationInformation', roles: ['RICE_ADMIN', 'BRAND', 'REGULATOR'] },
+  },
+  {
+    path: '/rice/quality/disposals',
+    name: 'DisposalList',
+    component: () => import('@/views/rice/quality/DisposalList.vue'),
+    // 需求 §九 FC-04：不合格品隔离、评审、返工、报废、让步接收
+    meta: { title: '不合格品处置', icon: 'FirstAidKit', roles: ['RICE_ADMIN', 'WAREHOUSE', 'FACTORY', 'REGULATOR'] },
+  },
+  {
+    path: '/rice/packages',
+    name: 'PackageUnitList',
+    component: () => import('@/views/rice/package/PackageUnitList.vue'),
+    // 需求 §九 YM-01：箱码 / 托盘码层级编码
+    meta: { title: '包装编码', icon: 'Files', roles: ['RICE_ADMIN', 'FACTORY', 'BRAND', 'REGULATOR'] },
+  },
+  {
+    path: '/rice/analytics',
+    name: 'Analytics',
+    component: () => import('@/views/rice/analytics/Analytics.vue'),
+    // 需求 §九 FX-01~FX-04：质量趋势、异常分布、召回绩效、风险评分
+    meta: { title: '质量分析', icon: 'TrendCharts', roles: ['RICE_ADMIN', 'BRAND', 'REGULATOR'] },
   },
   {
     path: '/rice/regulation/risk-warnings',

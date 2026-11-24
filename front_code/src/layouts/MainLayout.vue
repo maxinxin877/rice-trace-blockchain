@@ -134,6 +134,7 @@ const allMenuItems: MenuItem[] = [
       { path: '/rice/planting-batches', title: '种植批次', icon: 'Grid', roles: ['RICE_ADMIN', 'FARMER', 'REGULATOR'] },
       { path: '/rice/farming-logs', title: '农事记录', icon: 'Notebook', roles: ['RICE_ADMIN', 'FARMER', 'REGULATOR'] },
       { path: '/rice/environment-records', title: '环境数据', icon: 'Sunny', roles: ['RICE_ADMIN', 'FARMER', 'REGULATOR'] },
+      { path: '/rice/scan-collect', title: '扫码采集', icon: 'Aim', roles: ['RICE_ADMIN', 'FARMER', 'WAREHOUSE', 'FACTORY', 'BRAND', 'REGULATOR'] },
       { path: '/rice/storage-receipts', title: '收储入库', icon: 'Box', roles: ['RICE_ADMIN', 'WAREHOUSE', 'REGULATOR'] },
       { path: '/rice/milling-batches', title: '碾米加工', icon: 'Setting', roles: ['RICE_ADMIN', 'FACTORY', 'REGULATOR'] },
       { path: '/rice/product-batches', title: '成品批次', icon: 'Goods', roles: ['RICE_ADMIN', 'BRAND', 'REGULATOR'] },
@@ -142,8 +143,13 @@ const allMenuItems: MenuItem[] = [
   {
     group: '监管与风控',
     children: [
+      { path: '/rice/trace-center', title: '追溯查询', icon: 'Search', roles: ['RICE_ADMIN', 'FARMER', 'WAREHOUSE', 'FACTORY', 'BRAND', 'REGULATOR'] },
       { path: '/rice/trace-codes', title: '防伪码管理', icon: 'Ticket', roles: ['RICE_ADMIN', 'BRAND', 'REGULATOR'] },
+      { path: '/rice/packages', title: '包装编码', icon: 'Files', roles: ['RICE_ADMIN', 'FACTORY', 'BRAND', 'REGULATOR'] },
       { path: '/rice/channel-warnings', title: '窜货预警', icon: 'LocationInformation', roles: ['RICE_ADMIN', 'BRAND', 'REGULATOR'] },
+      { path: '/rice/recalls', title: '召回管理', icon: 'RefreshLeft', roles: ['RICE_ADMIN', 'BRAND', 'REGULATOR'] },
+      { path: '/rice/quality/disposals', title: '不合格品处置', icon: 'FirstAidKit', roles: ['RICE_ADMIN', 'WAREHOUSE', 'FACTORY', 'REGULATOR'] },
+      { path: '/rice/analytics', title: '质量分析', icon: 'TrendCharts', roles: ['RICE_ADMIN', 'BRAND', 'REGULATOR'] },
       { path: '/rice/regulation/risk-warnings', title: '风险预警', icon: 'Warning', roles: ['RICE_ADMIN', 'REGULATOR'] },
       { path: '/rice/regulation/audit-logs', title: '审计日志', icon: 'DocumentChecked', roles: ['RICE_ADMIN', 'REGULATOR'] },
       { path: '/rice/regulation/yield-balance', title: '产量平衡', icon: 'DataLine', roles: ['RICE_ADMIN', 'REGULATOR'] },
