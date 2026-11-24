@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -43,6 +44,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class ChainProofServiceImpl implements ChainProofService {
 
     private final RiceChainProofMapper chainProofMapper;
+    private final JdbcTemplate jdbcTemplate;
 
     /** 真实链服务（bcos.enabled=true 时存在） */
     @Autowired(required = false)
@@ -148,6 +150,7 @@ public class ChainProofServiceImpl implements ChainProofService {
                 proof.setChainStatus("SUCCESS");
                 proof.setChainError("");
                 chainProofMapper.updateById(proof);
+                syncBusinessChainStatus(proof.getBusinessType(), proof.getBusinessId(), "SUCCESS");
                 log.info("[链上存证] 上链成功: business={}/{}, txId={}, blockHeight={}",
                         proof.getBusinessType(), proof.getBusinessId(), proof.getTxId(), proof.getBlockHeight());
             } catch (Exception e) {
@@ -157,5 +160,34 @@ public class ChainProofServiceImpl implements ChainProofService {
                 chainProofMapper.updateById(proof);
             }
         });
+    }
+
+    /** businessType -> 业务表名 + 主键列名 */
+    private static final Map<String, String[]> TABLE_PK_MAP = Map.of(
+            "FIELD", new String[]{"rice_field", "field_id"},
+            "PLANTING_BATCH", new String[]{"rice_planting_batch", "planting_batch_id"},
+            "FARMING_LOG", new String[]{"rice_farming_log", "log_id"},
+            "STORAGE_RECEIPT", new String[]{"rice_storage_receipt", "storage_receipt_id"},
+            "QUALITY_TEST", new String[]{"rice_quality_test", "quality_test_id"},
+            "MILLING_BATCH", new String[]{"rice_milling_batch", "milling_batch_id"},
+            "PRODUCT_BATCH", new String[]{"rice_product_batch", "product_batch_id"},
+            "YIELD_BALANCE", new String[]{"rice_yield_balance", "check_id"},
+            "RISK_WARNING", new String[]{"rice_risk_warning", "warning_id"},
+            "AUDIT_LOG", new String[]{"rice_audit_log", "audit_id"}
+    );
+
+    /** 上链成功后回写业务表的 chain_status 字段 */
+    private void syncBusinessChainStatus(String businessType, String businessId, String status) {
+        String[] tablePk = TABLE_PK_MAP.get(businessType);
+        if (tablePk == null) {
+            return;
+        }
+        try {
+            jdbcTemplate.update(
+                    "UPDATE " + tablePk[0] + " SET chain_status = ?, chain_time = NOW() WHERE " + tablePk[1] + " = ?",
+                    status, businessId);
+        } catch (Exception e) {
+            log.warn("[链上存证] 回写业务表状态失败: table={}, id={}", tablePk[0], businessId, e);
+        }
     }
 }

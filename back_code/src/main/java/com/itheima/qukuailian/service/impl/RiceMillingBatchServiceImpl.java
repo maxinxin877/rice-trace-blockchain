@@ -65,11 +65,8 @@ public class RiceMillingBatchServiceImpl extends ServiceImpl<RiceMillingBatchMap
         //    （接口文档 §5.18「入库质检必须合格」已收敛到 QUALITY_PASS 规则内，口径保持一致）
         complianceGuardService.assertPass("GRAIN_BATCH", dto.getGrainBatchId(),
                 RiceComplianceGuardService.ACTION_MILL);
-        // 3. 成品米批次必须存在
-        RiceProductBatch productBatch = productBatchMapper.selectById(dto.getProductBatchId());
-        if (productBatch == null) {
-            throw new BizException(ResultCode.NOT_FOUND.getCode(), "成品米批次不存在: " + dto.getProductBatchId());
-        }
+        // 3. 成品米批次不要求此时已存在：加工环节即自定义 productBatchId，
+        //    后续在「成品批次」中用同一个 ID 建档，两者靠该字段建立链路（溯源按此反查）
 
         RiceMillingBatch batch = new RiceMillingBatch();
         BeanUtils.copyProperties(dto, batch);

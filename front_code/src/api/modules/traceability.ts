@@ -136,6 +136,7 @@ interface MiniChainProofRaw {
 
 const FARMING_OPERATION_LABEL: Record<string, string> = {
   SOWING: '播种',
+  FERTILIZING: '施肥',
   FERTILIZATION: '施肥',
   PESTICIDE: '用药',
   IRRIGATION: '灌溉',
@@ -171,7 +172,7 @@ function mapTraceDetail(raw: MiniTraceDetailRaw | null): TraceDetail | null {
       location: planting.address || '',
       summary: `${planting.riceVariety || product.riceVariety || ''} 完成播种，进入种植管理`,
       businessId: planting.plantingBatchId || '',
-      chainStatus: 'PENDING',
+      chainStatus: raw.chainProof?.verified ? 'SUCCESS' : 'PENDING',
     })
   }
   ;(raw.farmingLogs || []).forEach((log: MiniFarmingLogRaw, index: number) => {

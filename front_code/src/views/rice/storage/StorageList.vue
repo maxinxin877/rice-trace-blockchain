@@ -32,7 +32,7 @@
     </DataTable>
 
     <!-- 新增入库单弹窗 -->
-    <el-dialog v-model="showForm" title="新增入库单" width="650px">
+    <el-dialog v-model="showForm" title="新增入库单" width="760px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="130px">
         <el-row :gutter="20">
           <el-col :span="12">
@@ -71,29 +71,33 @@
           </el-col>
         </el-row>
         <el-row :gutter="20">
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="水分(%)" prop="moisturePercent">
               <el-input-number v-model="form.moisturePercent" :min="0" :max="40" :precision="2" style="width: 100%" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="杂质(%)" prop="impurityPercent">
               <el-input-number v-model="form.impurityPercent" :min="0" :max="20" :precision="2" style="width: 100%" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
             <el-form-item label="粮食等级" prop="grainGrade">
-              <el-select v-model="form.grainGrade" style="width: 100%">
+              <el-select v-model="form.grainGrade" placeholder="请选择等级" style="width: 100%">
                 <el-option label="一等" value="一等" />
                 <el-option label="二等" value="二等" />
                 <el-option label="三等" value="三等" />
               </el-select>
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="入库时间" prop="storageTime">
+              <el-date-picker v-model="form.storageTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" style="width: 100%" />
+            </el-form-item>
+          </el-col>
         </el-row>
-        <el-form-item label="入库时间" prop="storageTime">
-          <el-date-picker v-model="form.storageTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" style="width: 100%" />
-        </el-form-item>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="仓温(℃)">

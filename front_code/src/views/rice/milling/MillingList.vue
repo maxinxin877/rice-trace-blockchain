@@ -50,7 +50,11 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="成品批次ID" prop="productBatchId">
-              <el-input v-model="createForm.productBatchId" placeholder="自定义成品批次ID，如: PROD20261001001" />
+              <el-input v-model="createForm.productBatchId" placeholder="自定义成品批次ID，如: PROD20261001001">
+                <template #append>
+                  <el-button @click="genProductBatchId">生成</el-button>
+                </template>
+              </el-input>
             </el-form-item>
           </el-col>
         </el-row>
@@ -216,6 +220,14 @@ async function submitCreate() {
   } finally {
     creating.value = false
   }
+}
+
+/** 按 PROD + 日期 + 随机尾号生成成品批次ID，避免手工填写格式不一 */
+function genProductBatchId() {
+  const d = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const tail = String(Math.floor(Math.random() * 1000)).padStart(3, '0')
+  createForm.productBatchId = `PROD${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${tail}`
 }
 
 // 详情
